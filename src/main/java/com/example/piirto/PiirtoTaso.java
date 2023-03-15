@@ -2,32 +2,27 @@ package com.example.piirto;
 
 import javafx.scene.layout.GridPane;
 
-public class PiirtoTaso extends GridPane {
+import java.io.Serializable;
+
+public class PiirtoTaso extends GridPane implements Serializable {
     private static double leveys;
     private static double korkeus;
     private static int pikseleitaX;
     private static int pikseleitaY;
     private static int tasoNro;
 
+    private Pikseli[][] pikselit = new Pikseli[pikseleitaX][pikseleitaY];
+    private String nimi;
+    private int nakyvyys = 100;
+    private boolean piilotettu;
+    private boolean isPohjataso;
+
+    // TODO ehkä poistetaan tämä ja tähän liittyvät kentät täältä
     public static void setMitat(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
         PiirtoTaso.leveys = leveys;
         PiirtoTaso.korkeus = korkeus;
         PiirtoTaso.pikseleitaX = pikseleitaX;
         PiirtoTaso.pikseleitaY = pikseleitaY;
-    }
-
-    private String nimi;
-    private int lapinakyvyys = 100;
-    private boolean isPohjataso;
-
-    public PiirtoTaso() { // TODO
-//        super();
-//
-//        tasoNro++;
-//        nimi = "Taso " + tasoNro;
-//
-//        tayta();
-        this("Taso " + (tasoNro + 1));
     }
 
     public PiirtoTaso(String nimi) {
@@ -39,13 +34,45 @@ public class PiirtoTaso extends GridPane {
         tayta();
     }
 
-    private void tayta() {
-        Pikseli.setLeveys(leveys / (double) pikseleitaX);
-        Pikseli.setKorkeus(korkeus / (double) pikseleitaY);
+    public PiirtoTaso() { // TODO
+//        super();
+//
+//        tasoNro++;
+//        nimi = "Taso " + tasoNro;
+//
+//        tayta();
+        this("Taso " + (tasoNro + 1));
+    }
 
+
+    public Pikseli getPikseli(int x, int y) {
+        return pikselit[x][y];
+    }
+
+    public int getNakyvyys() {
+        return nakyvyys;
+    }
+
+    public void setNakyvyys(int nakyvyys) {
+        this.nakyvyys = nakyvyys;
+    }
+
+    /**
+     * Piilottaa tai näyttää tason. Tasolle asetettu näkyvyys (0-100) säilyy erikseen muistissa.
+     */
+    public void toggleNakyvyys() {
+        piilotettu = !piilotettu;
+    }
+
+    /**
+     * Täyttää tason pikseleillä.
+     */
+    private void tayta() {
         for (int x = 0; x < pikseleitaX; x++) {
             for (int y = 0; y < pikseleitaY; y++) {
-                this.add(new Pikseli(y, x), y, x);
+                Pikseli p = new Pikseli();
+                pikselit[x][y] = p;
+                this.add(p, x, y);
             }
         }
     }
