@@ -1,87 +1,127 @@
 package com.example.piirto;
 
-import javafx.beans.value.ObservableValue;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 import java.io.Serializable;
 
+/**
+ * Suorakulmio, joka toimii {@link PiirtoTaso PiirtoTasolla} muokattavana
+ * pikselinä.
+ */
 public class Pikseli extends Rectangle implements Serializable {
-    private static double leveys;
-    private static double korkeus;
+    /**
+     * Yksittäisen pikselin reunan pituus.
+     */
+    private static double reunaPituus;
 
-    private Color vari;
-    private int nakyvyys;
+    // TODO läpinäkyvyys ei toimi, alempien tasojen värit eivät näy
 
-    public static double getLeveys() {
-        return leveys;
+    /**
+     * @return Yksittäisen pikselin reunan pituus.
+     */
+    public static double getReunaPituus() {
+        return reunaPituus;
     }
 
-    public static void setLeveys(double leveys) {
-        Pikseli.leveys = leveys;
+    /**
+     * @param reunaPituus Yksittäisen pikselin reunan pituus.
+     */
+    public static void setReunaPituus(double reunaPituus) {
+        Pikseli.reunaPituus = reunaPituus;
     }
 
-    public static double getKorkeus() {
-        return korkeus;
-    }
-
-    public static void setKorkeus(double korkeus) {
-        Pikseli.korkeus = korkeus;
-    }
-
+    /**
+     * Asettaa Pikselille sopivan {@link #reunaPituus reunaPituuden} ympäröivän
+     * {@link PiirtoAlue PiirtoAlueen} mittojen mukaan.
+     * @param alueLeveys PiirtoAlueen leveys kuvapisteissä
+     * @param alueKorkeus PiirtoAlueen korkeus kuvapisteissä
+     * @param pikseleitaX PiirtoAlueen leveys Pikseleissä
+     * @param pikseleitaY PiirtoAlueen korkeus Pikseleissä
+     */
     public static void setMitat(double alueLeveys, double alueKorkeus, int pikseleitaX, int pikseleitaY) {
-        double reunaPituus = Math.min(alueLeveys / (double) pikseleitaX, alueKorkeus / (double) pikseleitaY);
-        Pikseli.leveys = reunaPituus;
-        Pikseli.korkeus = reunaPituus;
+        Pikseli.reunaPituus = Math.min(alueLeveys / (double) pikseleitaX, alueKorkeus / (double) pikseleitaY);
     }
 
-    public Pikseli(Color vari, int nakyvyys) {
-        /*
-        Leveydestä ja korkeudesta vähennetään, koska ääriviivat tekevät neliöistä
-        suurempia. TODO ehkä ääriviivat voisi toteuttaa erillisillä Lineillä jotka tulee tasojen ylle
-         */
-        super(leveys - 1, korkeus - 1, vari);
-        this.setStroke(Color.GRAY); // TEMP
-        this.setStrokeWidth(0.5); // TEMP
+    /**
+     * Luo Pikselin annettuun sijaintiin (sarake ja rivi) annetulla
+     * värillä ja läpinäkyvyydellä.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     * @param vari Pikselin väri
+     * @param nakyvyys Pikselin (läpi)näkyvyys asteikolla 0-100
+     */
+    public Pikseli(double x, double y, Color vari, int nakyvyys) {
+        // Lisätään leveyteen ja korkeuteen vähän, jotta pikselien väleissä ei näy valkoista
+        // TODO tee niin scuffed että jos näkyvyys on 100 niin +0.7 mittoihin mutta muuten ei, koska overlap
+        super(x * reunaPituus, y * reunaPituus, reunaPituus + 0.7, reunaPituus + 0.7);
+        this.setFill(vari);
 
-        this.vari = vari; // TODO tätä ei tarvita erillisenä kenttänä kai koska se on jo yliluokassa
-        if (nakyvyys < 0) {
-            this.nakyvyys = 0;
-        } else if (nakyvyys > 100) {
-            this.nakyvyys = 100;
-        } else {
-            this.nakyvyys = nakyvyys;
-        }
-
-        // TODO ehkä toiminnallisuus setOnMouseMove tänne tai PiirtoAlueeseen
-//        this.addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
-//            this.setFill(Color.BLACK);
-//        });
+        this.setNakyvyys(nakyvyys);
     }
 
-    public Pikseli(Color vari) {
-        this(vari, 100);
+    /**
+     * Luo Pikselin annettuun sijaintiin (sarake ja rivi) annetulla
+     * värillä. Läpinäkyvyys on oletuksena 100.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     * @param vari Pikselin väri
+     */
+    public Pikseli(double x, double y, Color vari) {
+        this(x, y, vari, 100);
     }
 
-    public Pikseli() {
-        this(Color.TRANSPARENT, 100); // TODO tämä voi olla valkoinen jos läpinäkyvyys toteutetaan
+    /**
+     * Luo Pikselin annettuun sijaintiin (sarake ja rivi). Väri on oletuksena
+     * läpinäkyvä ja läpinäkyvyys oletuksena 100.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     */
+    public Pikseli(double x, double y) {
+        this(x, y, Color.TRANSPARENT, 100); // TODO tämä voi olla valkoinen jos läpinäkyvyys toteutetaan
     }
 
-    public Color getVari() {
-        return vari;
+    /**
+     * @return Pikselin väri
+     */
+    public Color getVari() { // TODO ei kai näitä tarvitse
+        return (Color) this.getFill();
     }
 
+    /**
+     * @param vari Pikselin väri
+     */
     public void setVari(Color vari) {
-        this.vari = vari;
         this.setFill(vari);
     }
 
+    /**
+     * @return Pikselin läpinäkyvyys asteikolla 0-100
+     */
     public int getNakyvyys() {
-        return nakyvyys;
+        return (int) this.getOpacity() * 100;
     }
 
+    /**
+     * @param nakyvyys Pikselin läpinäkyvyys asteikolla 0-100
+     */
     public void setNakyvyys(int nakyvyys) {
-        this.nakyvyys = nakyvyys;
+        if (nakyvyys < 0) { // TODO tarvitseeko tätä
+            this.setOpacity(0);
+        } else if (nakyvyys > 100) {
+            this.setOpacity(1);
+        } else {
+            this.setOpacity(nakyvyys / 100d);
+        }
+    }
+
+    /**
+     * Asettaa sekä Pikselin värin että läpinäkyvyyden
+     * @param vari Pikselin väri
+     * @param nakyvyys Pikselin läpinäkyvyys asteikolla 0-100
+     */
+    public void setPikseli(Color vari, int nakyvyys) {
+        setVari(vari);
+        setNakyvyys(nakyvyys);
     }
 }

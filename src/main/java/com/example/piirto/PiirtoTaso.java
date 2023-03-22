@@ -1,21 +1,58 @@
 package com.example.piirto;
 
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 
 import java.io.Serializable;
 
-public class PiirtoTaso extends GridPane implements Serializable {
+/**
+ * {@link PiirtoAlue PiirtoAlueelle} lisättävä taso, joka sisältää väritettäviä
+ * {@link Pikseli Pikseleitä}.
+ */
+public class PiirtoTaso extends Pane implements Serializable {
+    /**
+     * Piirtotason leveys kuvapisteissä.
+     */
     private static double leveys;
+    /**
+     * Piirtotason korkeus kuvapisteissä.
+     */
     private static double korkeus;
+    /**
+     * Piirtotason leveys {@link Pikseli Pikseleissä}..
+     */
     private static int pikseleitaX;
+    /**
+     * Piirtotason korkeus {@link Pikseli Pikseleissä}.
+     */
     private static int pikseleitaY;
+    /**
+     * Piirtotason järjestysluku.
+     */
     private static int tasoNro;
 
+    /**
+     * Kaksiulotteinen taulukko piirtotason sisältämistä {@link Pikseli Pikseleistä}.
+     * <br>
+     * Taulukon ylempi (ulompi) taso on kuvaa sarakkeita ja alempi
+     * (sisempi) rivejä.
+     * <br>
+     * Esimerkiksi: <code>Pikseli[2][3]</code> = Pikseli sarakkeessa 2 ja rivissä 3
+     * (alkaen nollasta).
+     */
     private Pikseli[][] pikselit = new Pikseli[pikseleitaX][pikseleitaY];
+    /**
+     * Tason nimi. Oletuksena <code>Taso n</code>, jossa <code>n</code> on {@link #tasoNro tasoNro}.
+     */
     private String nimi;
-    private int nakyvyys = 100;
+    /**
+     * Tason näkyvyys asteikolla 0-100.
+     */
+    private int nakyvyys = 100; // TODO tätä ei tarvita
+    /**
+     * Onko taso piilotettu vai ei. {@link #nakyvyys nakyvyys} 100 ei tarkoita, että
+     * <code>piilotettu</code> olisi tosi, eikä toisin päin.
+     */
     private boolean piilotettu;
-    private boolean isPohjataso;
 
     // TODO ehkä poistetaan tämä ja tähän liittyvät kentät täältä
     public static void setMitat(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
@@ -25,36 +62,120 @@ public class PiirtoTaso extends GridPane implements Serializable {
         PiirtoTaso.pikseleitaY = pikseleitaY;
     }
 
+    /**
+     * Luo PiirtoTason annetulla nimellä. Jos <code>nimi</code> on tyhjä tai <code>null</code>, annetaan
+     * nimeksi oletuksena <code>Taso n</code>, jossa <code>n</code> on {@link #tasoNro tasoNro}.
+     * @param nimi Tason nimi
+     */
     public PiirtoTaso(String nimi) {
         super();
 
         tasoNro++;
-        this.nimi = nimi;
+        // Asetetaan tason nimeksi Taso n (jossa n on tason järjestysluku) jos nimi on null tai tyhjä
+        if (nimi == null || nimi.equals("")) {
+            this.nimi = "Taso " + tasoNro;
+        } else {
+            this.nimi = nimi;
+        }
 
+        // Täytetään taso pikseleillä
         tayta();
     }
 
-    public PiirtoTaso() { // TODO
-//        super();
-//
-//        tasoNro++;
-//        nimi = "Taso " + tasoNro;
-//
-//        tayta();
-        this("Taso " + (tasoNro + 1));
+    /**
+     * Luo PiirtoTason oletusnimellä <code>Taso n</code>, jossa <code>n</code> on {@link #tasoNro tasoNro}.
+     */
+    public PiirtoTaso() {
+        this(null);
     }
 
+    /**
+     * @return Tason järjestysluku, jota käytetään tason oletusnimen asettamisessa.
+     */
+    public static int getTasoNro() {
+        return tasoNro;
+    }
 
+    /**
+     * @param tasoNro Tason järjestysluku, jota käytetään tason oletusnimen asettamisessa.
+     */
+    public static void setTasoNro(int tasoNro) {
+        PiirtoTaso.tasoNro = tasoNro;
+    }
+
+    /**
+     * Palauttaa {@link Pikseli Pikselin} annetusta kohdasta (sarake ja rivi) PiirtoTasoa.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     * @return Pikseli-olio
+     */
     public Pikseli getPikseli(int x, int y) {
         return pikselit[x][y];
     }
 
+    /**
+     * Palauttaa taulukon annettua {@link Pikseli Pikseliä} ympäröivistä kahdeksasta Pikselistä,
+     * alkaen vasemmasta yläkulmasta ja kiertäen myötäpäivään.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     * @return Kahdeksan Pikseli-olion taulukko
+     */
+    public Pikseli[] getYmparoivatPikselit8(int x, int y) {
+        return new Pikseli[] {
+            pikselit[x - 1][y - 1],
+            pikselit[x - 1][y],
+            pikselit[x - 1][y + 1],
+            pikselit[x][y - 1],
+            pikselit[x][y + 1],
+            pikselit[x + 1][y - 1],
+            pikselit[x + 1][y],
+            pikselit[x + 1][y + 1]
+        };
+    }
+
+    /**
+     * Palauttaa taulukon annettua {@link Pikseli Pikseliä} ympäröivistä kahdeksasta Pikselistä,
+     * alkaen yläreunasta ja kiertäen myötäpäivään.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     * @return Neljän Pikseli-olion taulukko
+     */
+    public Pikseli[] getYmparoivatPikselit4(int x, int y) {
+        return new Pikseli[] {
+                pikselit[x - 1][y],
+                pikselit[x][y - 1],
+                pikselit[x][y + 1],
+                pikselit[x + 1][y]
+        };
+    }
+
+    /**
+     * @return PiirtoTason nimi
+     */
+    public String getNimi() {
+        return nimi;
+    }
+
+    /**
+     * @param nimi PiirtoTason nimi
+     */
+    public void setNimi(String nimi) {
+        this.nimi = nimi;
+    }
+
+    /**
+     * @return PiirtoTason näkyvyys asteikolla 0-100.
+     */
     public int getNakyvyys() {
         return nakyvyys;
     }
 
+    /**
+     * @param nakyvyys PiirtoTason näkyvyys asteikolla 0-100.
+     */
     public void setNakyvyys(int nakyvyys) {
-        this.nakyvyys = nakyvyys;
+        this.nakyvyys = nakyvyys; // TODO pois
+        this.setOpacity(nakyvyys / 100d);
     }
 
     /**
@@ -62,17 +183,18 @@ public class PiirtoTaso extends GridPane implements Serializable {
      */
     public void toggleNakyvyys() {
         piilotettu = !piilotettu;
+        this.setVisible(!piilotettu);
     }
 
     /**
-     * Täyttää tason pikseleillä.
+     * Täyttää tason {@link Pikseli Pikseleillä}.
      */
     private void tayta() {
         for (int x = 0; x < pikseleitaX; x++) {
             for (int y = 0; y < pikseleitaY; y++) {
-                Pikseli p = new Pikseli();
+                Pikseli p = new Pikseli(x, y);
                 pikselit[x][y] = p;
-                this.add(p, x, y);
+                this.getChildren().add(p);
             }
         }
     }
