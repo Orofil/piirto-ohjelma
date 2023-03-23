@@ -2,9 +2,7 @@ package com.example.piirto;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Node;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
@@ -25,52 +23,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
     private Ruudukko ruudukko;
     private boolean ruudukkoPiilotettu = true;
     private int valittuTaso;
-    private String valittuTyokalu = "piirto"; // TODO tuleeko nämä Mainiin
-    private Color valittuVari = Color.BLACK;
-    private int valittuNakyvyys = 100;
-    private int valittuPaksuus = 1;
     // TODO undo ja redo toiminnallisuus jotenkin ihmeellisesti
-
-    /**
-     * Tapahtumankäsittelijä piirtämiseen.
-     */
-//    private EventHandler<MouseEvent> tkPiirto = e -> { // TODO siirrä mainiin koska tämä ei ole serializable joten ei voi tallentaa :(((
-//        int x = (int) e.getX();
-//        int y = (int) e.getY();
-//        Color vari = valittuVari;
-//        if (e.isSecondaryButtonDown()) {
-//            vari = Color.TRANSPARENT;
-//        }
-//
-//        switch (valittuTyokalu) {
-//            case "piirto":
-//                if (valittuPaksuus == 1) {
-//                    setPikseli(x, y, vari, valittuNakyvyys);
-//                } else {
-//                    setPikseli(x, y, vari, valittuNakyvyys, valittuPaksuus);
-//                }
-//                break;
-//            case "poisto":
-//                if (valittuPaksuus == 1) {
-//                    setPikseli(x, y, Color.TRANSPARENT, 100);
-//                } else {
-//                    setPikseli(x, y, Color.TRANSPARENT, 100, valittuPaksuus);
-//                }
-//                break;
-//            case "täyttö":  // TODO täyttö
-//                if (valittuPaksuus == 1) {
-//                    setPikseli(x, y, valittuVari, valittuNakyvyys);
-//                } else {
-//                    setPikseli(x, y, valittuVari, valittuNakyvyys, valittuPaksuus);
-//                }
-//                break;
-//            case "värinpoimija":  // TODO värinpoimija
-//                Pikseli pikseli = getPikseli(x, y);
-//                setValittuVari(pikseli.getVari());
-//                setValittuNakyvyys(pikseli.getNakyvyys());
-//                break;
-//        }
-//    };
 
     public PiirtoAlue(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
         super();
@@ -80,22 +33,48 @@ public class PiirtoAlue extends StackPane implements Serializable {
         this.pikseleitaX = pikseleitaX;
         this.pikseleitaY = pikseleitaY;
 
-        // Luodaan ensimmäinen taso
+        // Asetetaan mitat pikseleille
         PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY); // TODO näitä kaikkia ei kai tarvita
 //        Pikseli.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
         Pikseli.setReunaPituus(pikseliReunaPituus);
 
-        PiirtoTaso t = new PiirtoTaso();
-        tasot.add(t);
-        this.getChildren().add(t);
+        // Luodaan ensimmäinen taso
+        lisaaTaso();
 
-        // Ruudukon piirtäminen
+        // Luodaan ruudukko
         ruudukko = new Ruudukko(leveys, korkeus, pikseleitaX, pikseleitaY);
-        // TODO pitäisi olla ylimpänä aina, ehkä tason lisäys metodissa
         toggleRuudukko();
+    }
 
-//        this.addEventHandler(MouseEvent.MOUSE_PRESSED, tkPiirto);
-//        this.addEventHandler(MouseEvent.MOUSE_DRAGGED, tkPiirto);
+    public PiirtoAlue(double leveys, double korkeus, int pikseleitaX, int pikseleitaY, Object[] o) {
+        super();
+        this.pikseliReunaPituus = Math.min(leveys / (double) pikseleitaX, korkeus / (double) pikseleitaY);
+        this.leveys = pikseleitaX * pikseliReunaPituus;
+        this.korkeus = pikseleitaY * pikseliReunaPituus;
+        this.pikseleitaX = pikseleitaX;
+        this.pikseleitaY = pikseleitaY;
+
+        // Asetetaan mitat pikseleille
+        PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY); // TODO näitä kaikkia ei kai tarvita
+//        Pikseli.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
+        Pikseli.setReunaPituus(pikseliReunaPituus);
+
+        // Luodaan tasot
+        Object[][] tasot = (Object[][]) o[0];
+        for (Object[] oTaso : tasot) {
+            lisaaTaso(oTaso);
+        }
+
+        // Luodaan ruudukko
+        ruudukko = new Ruudukko(leveys, korkeus, pikseleitaX, pikseleitaY);
+        setRuudukkoPiilotettu((Boolean) o[1]);
+
+        // Valitaan oikea taso
+        setValittuTaso((Integer) o[2]);
+    }
+
+    public int getTasoMaara() {
+        return tasot.size();
     }
 
     // TODO onko nämä järkevät
@@ -109,31 +88,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
 
     public void setValittuTaso(int valittuTaso) {
         this.valittuTaso = valittuTaso;
-        System.out.println("Valittu taso: " + valittuTaso);
-    }
-
-    public Color getValittuVari() {
-        return valittuVari;
-    }
-
-    public void setValittuVari(Color valittuVari) {
-        this.valittuVari = valittuVari;
-    }
-
-    public int getValittuNakyvyys() {
-        return valittuNakyvyys;
-    }
-
-    public void setValittuNakyvyys(int valittuNakyvyys) {
-        this.valittuNakyvyys = valittuNakyvyys;
-    }
-
-    public int getValittuPaksuus() {
-        return valittuPaksuus;
-    }
-
-    public void setValittuPaksuus(int valittuPaksuus) {
-        this.valittuPaksuus = valittuPaksuus;
+        System.out.println("Valittu taso: " + valittuTaso); // TEMP
     }
 
     public void lisaaTaso(String nimi) {
@@ -141,12 +96,27 @@ public class PiirtoAlue extends StackPane implements Serializable {
         tasot.add(t);
         this.getChildren().add(t);
         // Poistetaan ja lisätään ruudukko, jotta se on aina päällimmäisenä
-        this.getChildren().remove(ruudukko);
-        this.getChildren().add(ruudukko);
+        if (!ruudukkoPiilotettu) {
+            this.getChildren().remove(ruudukko);
+            this.getChildren().add(ruudukko);
+        }
+        // Valitaan uusi taso
+        setValittuTaso(tasot.size() - 1);
     }
 
     public void lisaaTaso() {
-        lisaaTaso(null);
+        lisaaTaso("");
+    }
+
+    private void lisaaTaso(Object[] o) { // TODO koodin toistoa
+        PiirtoTaso t = new PiirtoTaso(o);
+        tasot.add(t);
+        this.getChildren().add(t);
+        // Poistetaan ja lisätään ruudukko, jotta se on aina päällimmäisenä
+        if (!ruudukkoPiilotettu) {
+            this.getChildren().remove(ruudukko);
+            this.getChildren().add(ruudukko);
+        }
     }
 
     public void toggleTaso(int taso) {
@@ -177,13 +147,17 @@ public class PiirtoAlue extends StackPane implements Serializable {
         return tasonimet;
     }
 
-    public void toggleRuudukko() {
-        ruudukkoPiilotettu = !ruudukkoPiilotettu;
+    private void setRuudukkoPiilotettu(boolean ruudukkoPiilotettu) {
+        this.ruudukkoPiilotettu = ruudukkoPiilotettu;
         if (ruudukkoPiilotettu) {
             this.getChildren().remove(ruudukko);
         } else {
             this.getChildren().add(ruudukko);
         }
+    }
+
+    public void toggleRuudukko() {
+        setRuudukkoPiilotettu(!ruudukkoPiilotettu);
     }
 
     public Pikseli getPikseli(int x, int y) {
@@ -216,5 +190,22 @@ public class PiirtoAlue extends StackPane implements Serializable {
                 }
             }
         }
+    }
+
+    // TODO tallennukseen!
+    /**
+     * Object-taulukko PiirtoAlueen tallentamista varten.
+     * @return Tasot, ruudukkoPiilotettu, valittuTaso
+     */
+    public Object[] tallennus() {
+        Object[][] tasotTallennus = new Object[tasot.size()][4]; // TODO 4 voi muuttua
+        for (int i = 0; i < tasot.size(); i++) {
+            tasotTallennus[i] = tasot.get(i).tallennus();
+        }
+        return new Object[] {
+                tasotTallennus,
+                ruudukkoPiilotettu,
+                valittuTaso
+        };
     }
 }

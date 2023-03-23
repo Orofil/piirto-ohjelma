@@ -63,7 +63,7 @@ public class PiirtoTaso extends Pane implements Serializable {
     }
 
     /**
-     * Luo PiirtoTason annetulla nimellä. Jos <code>nimi</code> on tyhjä tai <code>null</code>, annetaan
+     * Luo PiirtoTason annetulla nimellä. Jos <code>nimi</code> on tyhjä, annetaan
      * nimeksi oletuksena <code>Taso n</code>, jossa <code>n</code> on {@link #tasoNro tasoNro}.
      * @param nimi Tason nimi
      */
@@ -72,7 +72,7 @@ public class PiirtoTaso extends Pane implements Serializable {
 
         tasoNro++;
         // Asetetaan tason nimeksi Taso n (jossa n on tason järjestysluku) jos nimi on null tai tyhjä
-        if (nimi == null || nimi.equals("")) {
+        if (nimi.equals("")) {
             this.nimi = "Taso " + tasoNro;
         } else {
             this.nimi = nimi;
@@ -86,7 +86,23 @@ public class PiirtoTaso extends Pane implements Serializable {
      * Luo PiirtoTason oletusnimellä <code>Taso n</code>, jossa <code>n</code> on {@link #tasoNro tasoNro}.
      */
     public PiirtoTaso() {
-        this(null);
+        this("");
+    }
+
+    /**
+     * Luo PiirtoTason {@link #tallennus() tallennus-metodilla} tallennettujen tietojen pohjalta.
+     * @param o Nimi, näkyvyys, piilotettu, Pikselit
+     */
+    public PiirtoTaso(Object[] o) {
+        super();
+
+        tasoNro++;
+        nimi = (String) o[0];
+
+        setNakyvyys((Integer) o[1]);
+        setPiilotettu((Boolean) o[2]);
+
+        tayta((Object[][][]) o[3]);
     }
 
     /**
@@ -178,16 +194,20 @@ public class PiirtoTaso extends Pane implements Serializable {
         this.setOpacity(nakyvyys / 100d);
     }
 
-    /**
-     * Piilottaa tai näyttää tason. Tasolle asetettu näkyvyys (0-100) säilyy erikseen muistissa.
-     */
-    public void toggleNakyvyys() {
-        piilotettu = !piilotettu;
+    public void setPiilotettu(boolean piilotettu) {
+        this.piilotettu = piilotettu;
         this.setVisible(!piilotettu);
     }
 
     /**
-     * Täyttää tason {@link Pikseli Pikseleillä}.
+     * Piilottaa tai näyttää tason. Tasolle asetettu näkyvyys (0-100) säilyy erikseen muistissa.
+     */
+    public void toggleNakyvyys() {
+        setPiilotettu(!piilotettu);
+    }
+
+    /**
+     * Täyttää tason tyhjillä {@link Pikseli Pikseleillä}.
      */
     private void tayta() {
         for (int x = 0; x < pikseleitaX; x++) {
@@ -197,5 +217,39 @@ public class PiirtoTaso extends Pane implements Serializable {
                 this.getChildren().add(p);
             }
         }
+    }
+
+    /**
+     * Täyttää tason {@link #tallennus() tallennus-metodilla} tallennetuilla
+     * {@link Pikseli Pikseleillä}.
+     * @param o
+     */
+    private void tayta(Object[][][] o) {
+        for (int x = 0; x < pikseleitaX; x++) {
+            for (int y = 0; y < pikseleitaY; y++) {
+                Pikseli p = new Pikseli(x, y, ((Vari) o[x][y][0]).toColor(), (Integer) o[x][y][1]);
+                pikselit[x][y] = p;
+                this.getChildren().add(p);
+            }
+        }
+    }
+
+    /**
+     * Object-taulukko PiirtoTason tallentamista varten.
+     * @return Nimi, näkyvyys, piilotettu, Pikselit
+     */
+    public Object[] tallennus() {
+        Object[][][] pikselitTallennus = new Object[pikseleitaX][pikseleitaY][2]; // TODO 2 voi muuttua
+        for (int x = 0; x < pikseleitaX; x++) {
+            for (int y = 0; y < pikseleitaY; y++) {
+                pikselitTallennus[x][y] = pikselit[x][y].tallennus();
+            }
+        }
+        return new Object[] {
+                nimi,
+                nakyvyys,
+                piilotettu,
+                pikselitTallennus
+        };
     }
 }

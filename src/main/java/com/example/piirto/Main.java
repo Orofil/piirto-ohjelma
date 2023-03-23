@@ -3,214 +3,458 @@ package com.example.piirto;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main extends Application {
-    Scene sceneAlku, scenePiirto;
+    private final String POLKU = "src/main/resources/com/example/piirto/";
+    private final String IMGPOLKU = "file:" + POLKU;
 
     private final int LEVEYS = 1000;
     private final int KORKEUS = 600;
 
     // TODO näitä ei ehkä kiinteinä vaan ne katsotaan kun on tehty
-    private int vasenLeveys = 80;
-    private int alaKorkeus = 80;
+    private final int VASENLEVEYS = 80;
+    private final int ALAKORKEUS = 80;
 
-    private int pikseleitaX = 70;
+    private int pikseleitaX = 76;
     private int pikseleitaY = 50;
+
+    private String tiedosto;
 
     private String valittuTyokalu = "piirto";
     private Color valittuVari = Color.BLACK;
     private int valittuNakyvyys = 100;
     private int valittuPaksuus = 1;
 
+    // TODO tänne kaikki komponentit niin niitä voi käyttää startin ulkopuolella
+    Scene sceneAlku, scenePiirto;
+    // Alkuvalikko
+    BorderPane bpAlkuvalikko;
+        VBox vbAlkuvalikkoVasen;
+            Label lbLuo;
+            HBox hbUusi;
+                Button bnUusi;
+                GridPane gpUusiPiks;
+                    Label lbPiksX; // TODO näitä ei varmaan kaikkia tarvitsisi määritellä erikseen, ainakaan Labeleita joilla ei ole toiminnallisuutta
+                    Label lbPiksY;
+                    Label lbPiksSuhde;
+                    TextField tfPiksX;
+                    TextField tfPiksY;
+                    CheckBox cbPiksSuhde;
+            Label lbAvaa;
+        VBox vbAlkuvalikkoOikea;
+            ImageView imgAlkuvalikko;
+            Text txAlkuvalikko;
+            Text txAlkuvalikkoLinkki;
+
+    // Piirtonäkymä
+    BorderPane bpPiirto;
+        VBox vbVasen;
+            HBox hbVari;
+                VBox vbVari;
+                    Label lbVari;
+                    RadioButton variMusta;
+                    RadioButton variPunainen;
+                    RadioButton variSininen;
+                    RadioButton variMuu; // Näkymätön RadioButton muille väreille valittavaksi
+                    ToggleGroup tgVarit;
+                    Button variValikko;
+                Rectangle rtVari;
+            Label lbPaksuus;
+            Slider slPaksuus;
+            Label lbNakyvyys;
+            Slider slNakyvyys;
+            Label lbTasot;
+            HBox hbUusiTaso;
+                Button bnUusiTaso;
+                TextField tfUusiTaso;
+            ListView<String> tasot;
+            HBox hbTaso;
+                Button bnTasoNakyvyys;
+                Button bnTasoYlos;
+                Button bnTasoAlas;
+                Button bnTasoPoista;
+            Label lbTasoNakyvyys;
+            Slider slTasoNakyvyys;
+        HBox hbAla;
+        // TODO
+            Button bnTakaisin;
+            Button bnTallenna;
+
+    double piksSuhde = (double) pikseleitaY / (double) pikseleitaX; // TODO ehkä eri luokkaan niiden yksien kanssa emt
+
     @Override
     public void start(Stage stage) {
         ////////// Alkuvalikko //////////
 
-        Label lbLuo = new Label("Luo uusi");
-        // TODO kuvat
-        Button bnUusiPikseli = new Button("Pikselikuva");
-        Button bnUusiKuvio = new Button("Grafiikkakuva");
-        HBox uudet = new HBox(bnUusiPikseli, bnUusiKuvio);
-        uudet.setSpacing(20);
+        lbLuo = new Label("Luo uusi");
+        lbAvaa = new Label("Avaa");
+        lbLuo.setFont(Font.font(24));
+        lbAvaa.setFont(Font.font(24));
 
-        Label lbAvaa = new Label("Avaa");
-        // TODO viimeisimmät tiedostot
+        bnUusi = new Button(); // TODO resoluution valinta
+        bnUusi.setGraphic(new ImageView(new Image(IMGPOLKU + "uusi.png")));
 
-        VBox alkuvalikko = new VBox(lbLuo, uudet, lbAvaa);
-        alkuvalikko.setSpacing(40);
-        alkuvalikko.setPadding(new Insets(40));
+        lbPiksX = new Label("Leveys:");
+        lbPiksY = new Label("Korkeus:");
+        tfPiksX = new TextField(String.valueOf(pikseleitaX));
+        tfPiksY = new TextField(String.valueOf(pikseleitaY)); // TODO nämä ei vielä vaikuta kuvaan
+        tfPiksX.setPrefWidth(40);
+        tfPiksY.setPrefWidth(40);
+        cbPiksSuhde = new CheckBox();
+        cbPiksSuhde.fire();
+        lbPiksSuhde = new Label("Säilytä suhde"); // TODO tämä ei vielä tee mitään
+
+        gpUusiPiks = new GridPane();
+        gpUusiPiks.add(lbPiksX, 0, 0);
+        gpUusiPiks.add(lbPiksY, 0, 1);
+        gpUusiPiks.add(cbPiksSuhde, 0, 2);
+        gpUusiPiks.add(tfPiksX, 1, 0);
+        gpUusiPiks.add(tfPiksY, 1, 1);
+        gpUusiPiks.add(lbPiksSuhde, 1, 2);
+        gpUusiPiks.setHgap(5);
+        gpUusiPiks.setVgap(5);
+        GridPane.setHalignment(cbPiksSuhde, HPos.RIGHT);
+
+        hbUusi = new HBox(bnUusi, gpUusiPiks);
+        hbUusi.setSpacing(10);
+
+        vbAlkuvalikkoVasen = new VBox(lbLuo, hbUusi, lbAvaa);
+        vbAlkuvalikkoVasen.setSpacing(40);
+
+        if (new File(POLKU + "viimeisimmät.txt").isFile()) {
+            try {
+                ArrayList<String> viimeisimmatTiedostot = new ArrayList<>();
+
+                Scanner scanner = new Scanner(new File(POLKU + "viimeisimmät.txt"));
+                while (scanner.hasNextLine()) {
+                    viimeisimmatTiedostot.add(scanner.nextLine());
+                }
+
+                Button[] bnViimeisimmat = new Button[viimeisimmatTiedostot.size()];
+
+                for (int i = 0; i < viimeisimmatTiedostot.size(); i++) {
+                    Button bn = new Button(viimeisimmatTiedostot.get(i));
+                    bn.setPrefWidth(250);
+                    bn.setFont(Font.font(18));
+                    bnViimeisimmat[i] = bn;
+                    // TODO kuva piirroksesta
+
+                    vbAlkuvalikkoVasen.getChildren().add(bnViimeisimmat[i]);
+
+                    int finalI = i;
+                    bnViimeisimmat[i].setOnAction(e -> {
+                        tiedosto = viimeisimmatTiedostot.get(finalI) + ".dat";
+                        stage.setScene(scenePiirto);
+                    });
+                }
+
+                // TODO tee napit jokaiselle
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            vbAlkuvalikkoVasen.getChildren().add(new Text("Ei viimeisimpiä tiedostoja"));
+        }
+
+        imgAlkuvalikko = new ImageView(new Image(IMGPOLKU + "piirto-ohjelma.png"));
+        txAlkuvalikko = new Text("""
+                        Piirto-ohjelma, jonka nimi on luovasti "piirto-ohjelma"
+                        Soveltuu pikselien värittämiseen
+                        Sen lisäksi ei tee paljon muuta
+                        Saatan päivittää ohjelmaa tulevaisuudessa
+                        
+                        Jaakko Saano (Orofil), 2023""");
+        txAlkuvalikko.setTextAlignment(TextAlignment.RIGHT);
+        txAlkuvalikkoLinkki = new Text("github.com/Orofil/piirto-ohjelma"); // TODO linkin avautuminen
+        txAlkuvalikkoLinkki.setUnderline(true);
+        txAlkuvalikkoLinkki.setFill(Color.web("#0000EE"));
+
+        vbAlkuvalikkoOikea = new VBox(imgAlkuvalikko, txAlkuvalikko, txAlkuvalikkoLinkki);
+        vbAlkuvalikkoOikea.setAlignment(Pos.TOP_RIGHT);
+
+        bpAlkuvalikko = new BorderPane();
+        bpAlkuvalikko.setPadding(new Insets(40));
+        bpAlkuvalikko.setLeft(vbAlkuvalikkoVasen);
+        bpAlkuvalikko.setRight(vbAlkuvalikkoOikea);
 
         ///// Toiminnallisuus
-        bnUusiPikseli.setOnAction(e -> stage.setScene(scenePiirto));
-        // TODO scene kuviopiirrolle
+        bnUusi.setOnAction(e -> stage.setScene(scenePiirto));
+
+        tfPiksX.setOnKeyTyped(e -> {
+            AtomicInteger x = new AtomicInteger(); // TODO ei tarvitse olla atomic integer jos on erillisessä luokassa
+            if (cbPiksSuhde.isSelected()) {
+                try {
+                    x.set(Integer.parseInt(tfPiksX.getText()));
+                    tfPiksY.setText(String.valueOf((int) Math.round(x.intValue() * piksSuhde)));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+        tfPiksY.setOnKeyTyped(e -> {
+            AtomicInteger y = new AtomicInteger(); // TODO ei tarvitse olla atomic integer jos on erillisessä luokassa
+            if (cbPiksSuhde.isSelected()) {
+                try {
+                    y.set(Integer.parseInt(tfPiksY.getText()));
+                    tfPiksX.setText(String.valueOf((int) Math.round(y.intValue() / piksSuhde)));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        cbPiksSuhde.setOnAction(e -> {
+            try {
+                piksSuhde = Double.parseDouble(tfPiksY.getText()) / Double.parseDouble(tfPiksX.getText());
+            } catch (NumberFormatException ignored) {}
+        });
+
+        txAlkuvalikkoLinkki.setOnMouseClicked(e ->
+            getHostServices().showDocument("https://github.com/Orofil/piirto-ohjelma"));
 
         ///// Scene
-        sceneAlku = new Scene(alkuvalikko, LEVEYS, KORKEUS);
+        sceneAlku = new Scene(bpAlkuvalikko, LEVEYS, KORKEUS);
 
 
 
         ////////// Piirtonäkymä //////////
+        // TODO tiedoston lukeminen jos tiedostonimi ei ole null
 
-        BorderPane asettelu = new BorderPane();
+        bpPiirto = new BorderPane();
 
         ///// Vasen valikko
-        VBox vasen = new VBox(5);
-        vasen.setPadding(new Insets(10,10,10,10));
-        vasen.setStyle("-fx-border-color: gray");
-        asettelu.setLeft(vasen);
+        vbVasen = new VBox(5);
+        vbVasen.setPadding(new Insets(10,10,10,10));
+        vbVasen.setStyle("-fx-border-color: gray");
+        bpPiirto.setLeft(vbVasen);
 
-        Label lbVari = new Label("Värit");
-        RadioButton variMusta = new RadioButton("Musta");
-        RadioButton variPunainen = new RadioButton("Punainen");
-        RadioButton variSininen = new RadioButton("Sininen");
-        ToggleGroup tgVarit = new ToggleGroup();
+        lbVari = new Label("Värit");
+        variMusta = new RadioButton("Musta");
+        variPunainen = new RadioButton("Punainen");
+        variSininen = new RadioButton("Sininen");
+        variMuu = new RadioButton();
+
+        tgVarit = new ToggleGroup();
         variMusta.setToggleGroup(tgVarit);
         variPunainen.setToggleGroup(tgVarit);
         variSininen.setToggleGroup(tgVarit);
-        variMusta.fire();
+        variMuu.setToggleGroup(tgVarit);
 
-        Button variValikko = new Button("Väri");
+        variMusta.fire(); // TODO ei näin jos on eri valittuVäri tiedostoa avattaessa emt
+        variValikko = new Button("Väri");
+
+        vbVari = new VBox(5);
+        vbVari.getChildren().addAll(lbVari, variMusta, variPunainen, variSininen, variValikko);
+
+        rtVari = new Rectangle(40, 40, valittuVari); // TODO värin muutos setteriin
+
+        hbVari = new HBox(70);
+        hbVari.getChildren().addAll(vbVari, rtVari);
+
 
         // TODO tooltipit näiden arvolle tai johonkin muuhun labeliin tai siis Textiin
-        Label lbPaksuus = new Label("Paksuus");
-        Slider slPaksuus = new Slider(1, 100, 1);
+        lbPaksuus = new Label("Paksuus");
+        slPaksuus = new Slider(1, 100, 1);
         slPaksuus.setShowTickLabels(true);
 
-        Label lbNakyvyys = new Label("Näkyvyys");
-        Slider slNakyvyys = new Slider(0, 100, 100);
+        lbNakyvyys = new Label("Näkyvyys");
+        slNakyvyys = new Slider(0, 100, 100);
         slNakyvyys.setShowTickLabels(true);
 
-        Label lbTasot = new Label("Tasot");
-        Button bnUusiTaso = new Button("+");
-        TextField uusiTasoNimi = new TextField();
-        uusiTasoNimi.setPromptText("Taso 2");
-        HBox hbUusiTaso = new HBox(bnUusiTaso, uusiTasoNimi);
+        lbTasot = new Label("Tasot");
+        bnUusiTaso = new Button("+");
+        tfUusiTaso = new TextField();
+        tfUusiTaso.setPromptText("Taso 2");
+        hbUusiTaso = new HBox(bnUusiTaso, tfUusiTaso);
         hbUusiTaso.setSpacing(10);
 
-        // TODO valitse ensimmäinen taso automaattisesti
-        ListView<String> tasot = new ListView<>();
+        tasot = new ListView<>();
         tasot.setPrefWidth(140); // TODO tämän ei kannata olla vakio
 
         // TODO kuvat
-        Button bnTasoNakyvyys = new Button("Näk");
-        Button bnTasoYlos = new Button("Ylös");
-        Button bnTasoAlas = new Button("Alas");
-        HBox hbTaso = new HBox(bnTasoNakyvyys, bnTasoYlos, bnTasoAlas);
+        bnTasoNakyvyys = new Button("Näk");
+        bnTasoYlos = new Button("Ylös");
+        bnTasoAlas = new Button("Alas");
+        bnTasoPoista = new Button("Pois");
+        hbTaso = new HBox(bnTasoNakyvyys, bnTasoYlos, bnTasoAlas, bnTasoPoista); // TODO on varmaan liian leveä
         hbTaso.setSpacing(10);
-        Label lbTasoNakyvyys = new Label("Näkyvyys");
-        Slider slTasoNakyvyys = new Slider(0, 100, 100);
+        lbTasoNakyvyys = new Label("Näkyvyys");
+        slTasoNakyvyys = new Slider(0, 100, 100);
 
         // TODO lisää tasoille listan pohjaan napit siirtämiselle, poistamiselle ja näkyvyyden togglelle
 
-        vasen.getChildren().addAll(lbVari, variMusta, variPunainen, variSininen, variValikko,
+        vbVasen.getChildren().addAll(hbVari,
                 lbPaksuus, slPaksuus,
                 lbNakyvyys, slNakyvyys,
                 lbTasot, hbUusiTaso, tasot,
                 hbTaso, lbTasoNakyvyys, slTasoNakyvyys);
 
         ///// Alavalikko
-        HBox ala = new HBox(10);
+        BorderPane ala = new BorderPane();
         ala.setPadding(new Insets(10,10,10,10));
         ala.setStyle("-fx-border-color: gray");
-        asettelu.setBottom(ala);
+        bpPiirto.setBottom(ala);
 
-        // TODO kuvat
-        Button bnPiirto = new Button("Piirrä");
-        Button bnPoisto = new Button("Poista");
-        Button bnTaytto = new Button("Täytä");
-        Button bnVarinpoimija = new Button("Värinpoimija");
+        Button bnPiirto = new Button();
+        bnPiirto.setGraphic(new ImageView(new Image(IMGPOLKU + "kynä.png")));
+        Button bnPoisto = new Button();
+        bnPoisto.setGraphic(new ImageView(new Image(IMGPOLKU + "kumi.png")));
+        Button bnTaytto = new Button();
+        bnTaytto.setGraphic(new ImageView(new Image(IMGPOLKU + "ämpäri.png")));
+        Button bnVarinpoimija = new Button();
+        bnVarinpoimija.setGraphic(new ImageView(new Image(IMGPOLKU + "värinpoimija.png")));
 
-        Button bnRuudukko = new Button("Ruudukko");
+        Button bnRuudukko = new Button();
+        bnRuudukko.setGraphic(new ImageView(new Image(IMGPOLKU + "ruudukko.png")));
         bnRuudukko.setAlignment(Pos.CENTER);
-        HBox.setMargin(bnRuudukko, new Insets(0,20,0,20));
 
-        Button bnUndo = new Button("Undo");
-        Button bnRedo = new Button("Redo");
-        Button bnTallenna = new Button("Tallenna");
-        bnUndo.setAlignment(Pos.CENTER_RIGHT);
-        bnRedo.setAlignment(Pos.CENTER_RIGHT);
-        bnTallenna.setAlignment(Pos.CENTER_RIGHT);
+//        bnUndo = new Button("Undo"); // TODO pois palautuksessa
+//        bnRedo = new Button("Redo");
+        bnTakaisin = new Button("Takaisin");
+        bnTallenna = new Button("Tallenna");
+        bnTakaisin.setFont(Font.font(18));
+        bnTallenna.setFont(Font.font("", FontWeight.BOLD, 24));
 
-        ala.getChildren().addAll(bnPiirto, bnPoisto, bnTaytto, bnVarinpoimija,
-                bnRuudukko, bnUndo, bnRedo, bnTallenna);
+        HBox alaVasen = new HBox(10);
+        alaVasen.getChildren().addAll(bnPiirto, bnPoisto, bnTaytto, bnVarinpoimija);
+        HBox alaKeski = new HBox(10);
+        alaKeski.setAlignment(Pos.CENTER);
+        alaKeski.getChildren().add(bnRuudukko);
+        HBox alaOikea = new HBox(10);
+        alaOikea.setAlignment(Pos.CENTER_RIGHT);
+        alaOikea.getChildren().addAll(bnTakaisin, bnTallenna);
+
+        ala.setLeft(alaVasen);
+        ala.setCenter(alaKeski);
+        ala.setRight(alaOikea);
+
 
         ///// Piirtoalue
         PiirtoAlue piirtoAlue = new PiirtoAlue(
-                LEVEYS - vasenLeveys, // TODO tässä voisi olla dynaamiset luvut
-                KORKEUS - alaKorkeus,
+                LEVEYS - VASENLEVEYS, // TODO tässä voisi olla dynaamiset luvut
+                KORKEUS - ALAKORKEUS,
                 pikseleitaX,
                 pikseleitaY);
         piirtoAlue.setStyle("-fx-background-color: white");
-        asettelu.setCenter(piirtoAlue);
+        bpPiirto.setCenter(piirtoAlue);
+
 
         ///// Toiminnallisuus
         // Värien valinta
-//        variMusta.setOnAction(e -> piirtoAlue.setValittuVari(Color.BLACK));
-//        variPunainen.setOnAction(e -> piirtoAlue.setValittuVari(Color.RED));
-//        variSininen.setOnAction(e -> piirtoAlue.setValittuVari(Color.BLUE));
-        variMusta.setOnAction(e -> valittuVari = Color.BLACK);
-        variPunainen.setOnAction(e -> valittuVari = Color.RED);
-        variSininen.setOnAction(e -> valittuVari = Color.BLUE);
+        variMusta.setOnAction(e -> setValittuVari(Color.BLACK));
+        variPunainen.setOnAction(e -> setValittuVari(Color.RED));
+        variSininen.setOnAction(e -> setValittuVari(Color.BLUE));
         // Pop-up-ikkuna värin valitsemiseksi
         variValikko.setOnAction(e -> { // TODO erilliseen luokkaan koodin siistimiseksi
+            AtomicInteger r = new AtomicInteger(); // TODO ei tarvitse olla atomic integer jos on erillisessä luokassa
+            AtomicInteger g = new AtomicInteger();
+            AtomicInteger b = new AtomicInteger();
+
             Stage variStage = new Stage();
             variStage.initModality(Modality.NONE);
             variStage.initOwner(stage);
 
+            Label lbR = new Label("Punainen (R):");
+            Label lbG = new Label("Vihreä (G):");
+            Label lbB = new Label("Sininen (B):");
+            TextField tfR = new TextField(String.valueOf((int) (valittuVari.getRed() * 255)));
+            TextField tfG = new TextField(String.valueOf((int) (valittuVari.getGreen() * 255)));
+            TextField tfB = new TextField(String.valueOf((int) (valittuVari.getBlue() * 255)));
+            tfR.setPrefWidth(40);
+            tfG.setPrefWidth(40);
+            tfB.setPrefWidth(40);
 
+            GridPane hbVarit = new GridPane();
+            hbVarit.setHgap(5);
+            hbVarit.add(lbR, 0, 0);
+            hbVarit.add(lbG, 0, 1);
+            hbVarit.add(lbB, 0, 2);
+            hbVarit.add(tfR, 1, 0);
+            hbVarit.add(tfG, 1, 1);
+            hbVarit.add(tfB, 1, 2);
 
-            VBox vbTallennus = new VBox(10);
-            vbTallennus.setPadding(new Insets(15));
-            vbTallennus.getChildren().add(new Label("Tiedostonimi:"));
-            TextField tfTiedostonimi = new TextField();
-            Label lbTallennusHuom = new Label();
-            lbTallennusHuom.setTextFill(Color.RED);
-            Button bnTallennus = new Button("Tallenna");
-            vbTallennus.getChildren().addAll(tfTiedostonimi, lbTallennusHuom, bnTallennus);
+            Label lbHuom = new Label();
+            lbHuom.setTextFill(Color.RED);
+            Button bnOK = new Button("OK");
 
-            Scene tallennusScene = new Scene(vbTallennus, 300, 150);
+            VBox vbVariVal = new VBox(10);
+            vbVariVal.setPadding(new Insets(10));
+            vbVariVal.getChildren().addAll(hbVarit, lbHuom, bnOK);
+
+            /// Toiminnallisuus
+            EventHandler<KeyEvent> tkHuom = e1 -> {
+                try {
+                    r.set((int) Double.parseDouble(tfR.getText()));
+                    g.set((int) Double.parseDouble(tfG.getText()));
+                    b.set((int) Double.parseDouble(tfB.getText()));
+                    if (r.get() < 0 || r.get() > 255 ||
+                        g.get() < 0 || g.get() > 255 ||
+                        b.get() < 0 || b.get() > 255) {
+                        lbHuom.setText("HUOM: Väri ei ole kelvollinen!");
+                        bnOK.setDisable(true);
+                    } else {
+                        lbHuom.setText("");
+                        bnOK.setDisable(false);
+                    }
+                } catch (NumberFormatException ex) {
+                    lbHuom.setText("HUOM: Väri ei ole kelvollinen!");
+                    bnOK.setDisable(true);
+                }
+            };
+            tfR.setOnKeyTyped(tkHuom);
+            tfG.setOnKeyTyped(tkHuom);
+            tfB.setOnKeyTyped(tkHuom);
+
+            bnOK.setOnAction(e1 -> {
+                setValittuVari(Color.rgb(r.get(), g.get(), b.get()));
+                variStage.close();
+            });
+
+            Scene tallennusScene = new Scene(vbVariVal, 150, 200);
             variStage.setScene(tallennusScene);
             variStage.show();
         });
 
         // Paksuuden säätö
-//        slPaksuus.valueProperty().addListener(ov ->
-//            piirtoAlue.setValittuPaksuus((int) slPaksuus.getValue()));
         slPaksuus.valueProperty().addListener(ov ->
             valittuPaksuus = (int) slPaksuus.getValue());
 
         // Läpinäkyvyyden säätö
-//        slNakyvyys.valueProperty().addListener(ov ->
-//            piirtoAlue.setValittuNakyvyys((int) slNakyvyys.getValue()));
         slNakyvyys.valueProperty().addListener(ov ->
             valittuNakyvyys = (int) slNakyvyys.getValue());
 
         // Tason lisäys
-        // TODO lisää nimeäminen ehkä vierellä olevana TextFieldinä
         bnUusiTaso.setOnAction(e -> {
-            piirtoAlue.lisaaTaso(uusiTasoNimi.getText());
-            uusiTasoNimi.setText("");
-            uusiTasoNimi.setPromptText("Taso " + (PiirtoTaso.getTasoNro() + 1));
+            piirtoAlue.lisaaTaso(tfUusiTaso.getText());
+            tfUusiTaso.setText("");
+            tfUusiTaso.setPromptText("Taso " + (PiirtoTaso.getTasoNro() + 1));
             // Päivitetään tasojen lista
             tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
+            tasot.getSelectionModel().select(piirtoAlue.getTasoMaara() - 1);
+            tasot.scrollTo(piirtoAlue.getTasoMaara() - 1);
         });
 
-        // Luodaan lista tasoista
+        // Alussa luodaan lista tasoista ja valitaan ensimmäinen
         tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
+        tasot.getSelectionModel().select(0);
+
         // Aktiivisen tason valinta
         tasot.getSelectionModel().selectedItemProperty().addListener(ov ->
             piirtoAlue.setValittuTaso(tasot.getSelectionModel().getSelectedIndex())
@@ -225,13 +469,15 @@ public class Main extends Application {
             piirtoAlue.getValittuTaso().setNakyvyys((int) slTasoNakyvyys.getValue()));
 
         // Työkalut
-        // TODO
+        bnPiirto.setOnAction(e -> valittuTyokalu = "piirto");
+        bnPoisto.setOnAction(e -> valittuTyokalu = "poisto");
+        bnTaytto.setOnAction(e -> valittuTyokalu = "täyttö");
+        bnVarinpoimija.setOnAction(e -> valittuTyokalu = "värinpoimija");
 
         // Ruudukko
         bnRuudukko.setOnAction(e -> piirtoAlue.toggleRuudukko());
 
         // Piirtoalue
-        // TODO tulisiko tämä tänne
         EventHandler<MouseEvent> tkPiirto = e -> {
             int x = (int) e.getX();
             int y = (int) e.getY();
@@ -262,9 +508,9 @@ public class Main extends Application {
                         piirtoAlue.setPikseli(x, y, valittuVari, valittuNakyvyys, valittuPaksuus);
                     }
                     break;
-                case "värinpoimija":  // TODO värinpoimija
+                case "värinpoimija":
                     Pikseli pikseli = piirtoAlue.getPikseli(x, y);
-                    valittuVari = pikseli.getVari();
+                    setValittuVari(pikseli.getVari());
                     valittuNakyvyys = pikseli.getNakyvyys();
                     break;
             }
@@ -272,10 +518,13 @@ public class Main extends Application {
         piirtoAlue.addEventHandler(MouseEvent.MOUSE_PRESSED, tkPiirto);
         piirtoAlue.addEventHandler(MouseEvent.MOUSE_DRAGGED, tkPiirto);
 
+        // Takaisin päävalikkoon
+        bnTakaisin.setOnAction(e -> stage.setScene(sceneAlku)); // TODO asiat eivät päivity näin
+
         // Tallentaminen
         bnTallenna.setOnAction(e -> { // TODO erilliseen luokkaan koodin siistimiseksi
             Stage tallennusStage = new Stage();
-            tallennusStage.initModality(Modality.NONE);
+            tallennusStage.initModality(Modality.NONE); // TODO jotenkin niin että alemmalla ikkunalla ei voi tehdä mitään
             tallennusStage.initOwner(stage);
 
             VBox vbTallennus = new VBox(10);
@@ -300,17 +549,59 @@ public class Main extends Application {
                 }
             });
             bnTallennus.setOnAction(e1 -> {
-                System.out.println("Tallennetaan");
 
-                try {
+                try { // TODO tallennusjuttu, tärkeä!
+                    String tiedostonimi = tfTiedostonimi.getText();
+
                     ObjectOutputStream fileOutput = new ObjectOutputStream(
-                            new FileOutputStream(tfTiedostonimi.getText() + ".dat"));
+                            new FileOutputStream(tiedostonimi + ".dat"));
 
-                    fileOutput.writeObject(piirtoAlue);
+                    Object[] tallennettavat = new Object[] {
+                            LEVEYS - VASENLEVEYS,
+                            KORKEUS - ALAKORKEUS,
+                            pikseleitaX,
+                            pikseleitaY,
+                            // TODO jotenkin muut tiedot valituista työkaluista ja muista
+                            piirtoAlue.tallennus()
+                    };
+                    fileOutput.writeObject(tallennettavat);
 
                     fileOutput.close();
+
+                    // Tallennetaan tieto viimeisimmistä tiedostoista
+                    File viimeisimmat = new File(POLKU + "viimeisimmät.txt");
+                    if (!viimeisimmat.createNewFile()) {
+                        FileWriter writer = new FileWriter(viimeisimmat);
+                        writer.write(tiedostonimi);
+                        writer.close();
+                    } else {
+                        // Lisätään uusin tiedostonimi muiden eteen
+                        ArrayList<String> viimeisimmatTeksti = new ArrayList<>();
+                        viimeisimmatTeksti.add(tiedostonimi);
+
+                        Scanner scanner = new Scanner(viimeisimmat);
+                        while (scanner.hasNextLine()) {
+                            String nextLine = scanner.nextLine();
+                            // Jos sama tiedostonimi oli jo listassa, se jätetään pois
+                            if (!nextLine.equals(tiedostonimi)) {
+                                viimeisimmatTeksti.add(nextLine);
+                            }
+                        }
+
+                        // Poistetaan viimeinen nimi jos tiedostoja on yli 6
+                        if (viimeisimmatTeksti.size() > 6) {
+                            viimeisimmatTeksti.remove(viimeisimmatTeksti.size() - 1);
+                        }
+
+                        // Kirjoitetaan nimet tiedostoon
+                        FileWriter writer = new FileWriter(viimeisimmat);
+                        for (String nimi : viimeisimmatTeksti) {
+                            writer.write(nimi + System.lineSeparator());
+                        }
+                        writer.close();
+                    }
+
                     tallennusStage.close();
-                    System.out.println("Tallennettu tiedosto nimellä " + tfTiedostonimi.getText() + ".dat"); // TEMP
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -318,12 +609,12 @@ public class Main extends Application {
         });
 
         ///// Scene
-        scenePiirto = new Scene(asettelu, LEVEYS, KORKEUS);
+        scenePiirto = new Scene(bpPiirto, LEVEYS, KORKEUS);
 
         //////////
 
         stage.setTitle("Piirto-ohjelma");
-//        stage.setResizable(false); // TEMP kommenttina
+        stage.setResizable(false);
         stage.setScene(sceneAlku);
         stage.show();
 
@@ -335,5 +626,19 @@ public class Main extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    public void setValittuVari(Color vari) {
+        valittuVari = vari;
+        rtVari.setFill(vari);
+        if (vari.equals(Color.BLACK)) {
+            variMusta.fire();
+        } else if (vari.equals(Color.RED)) {
+            variPunainen.fire();
+        } else if (vari.equals(Color.BLUE)) {
+            variSininen.fire();
+        } else {
+            variMuu.fire();
+        }
     }
 }

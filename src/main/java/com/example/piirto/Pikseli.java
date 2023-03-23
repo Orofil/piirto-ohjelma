@@ -15,8 +15,6 @@ public class Pikseli extends Rectangle implements Serializable {
      */
     private static double reunaPituus;
 
-    // TODO läpinäkyvyys ei toimi, alempien tasojen värit eivät näy
-
     /**
      * @return Yksittäisen pikselin reunan pituus.
      */
@@ -82,6 +80,18 @@ public class Pikseli extends Rectangle implements Serializable {
     }
 
     /**
+     * Luo Pikselin {@link #tallennus() tallennus-metodilla} tallennettujen tietojen pohjalta.
+     * @param o X, Y, väri, näkyvyys
+     */
+    public Pikseli(Object[] o) {
+        this(
+                (Double) o[0],
+                (Double) o[1],
+                ((Vari) o[2]).toColor(),
+                (Integer) o[3]);
+    }
+
+    /**
      * @return Pikselin väri
      */
     public Color getVari() { // TODO ei kai näitä tarvitse
@@ -123,5 +133,16 @@ public class Pikseli extends Rectangle implements Serializable {
     public void setPikseli(Color vari, int nakyvyys) {
         setVari(vari);
         setNakyvyys(nakyvyys);
+    }
+
+    /**
+     * Object-taulukko Pikselin tiedostoon tallentamista varten.
+     * @return X, Y, väri, näkyvyys
+     */
+    public Object[] tallennus() {
+        return new Object[] {
+                Vari.toVari((Color) this.getFill()),
+                this.getOpacity()
+        };
     }
 }

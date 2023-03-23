@@ -4,9 +4,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
-import java.io.Serializable;
-
-public class Ruudukko extends Pane implements Serializable {
+public class Ruudukko extends Pane {
     public Ruudukko(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
         double pikseliMitta = Math.min(leveys / (double) pikseleitaX, korkeus / (double) pikseleitaY);
         for (int i = 0; i < pikseleitaX; i++) {
@@ -21,5 +19,6 @@ public class Ruudukko extends Pane implements Serializable {
             l.setStrokeWidth(0.5);
             this.getChildren().add(l);
         }
+        this.setOpacity(0.5);
     }
 }

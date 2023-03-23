@@ -2,13 +2,13 @@ package com.example.piirto;
 
 import javafx.scene.paint.Color;
 
-// TODO toteuta tämä sarjallistettaviin tiedostoihin
+import java.io.Serializable;
 
 /**
  * Sarjallistettava versio JavaFX:n Color-luokasta sitä varten, että
  * voin tallentaa PiirtoAlueen ja siinä olevat asiat sarjallistamalla.
  */
-public class Vari {
+public class Vari implements Serializable {
     /**
      * Punainen (0-255)
      */
@@ -68,5 +68,13 @@ public class Vari {
      */
     public Color toColor() {
         return Color.rgb(r, g, b, a);
+    }
+
+    public static Vari toVari(Color c) {
+        return new Vari(c);
+    }
+
+    public String toString() { // TEMP
+        return "Väri: R = " + r + ", G = " + g + ", B = " + b + ", A = " + a;
     }
 }
