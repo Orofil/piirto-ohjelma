@@ -174,7 +174,7 @@ public class NayttoPiirto extends Application implements Naytto {
 
         hbTaso = new HBox(bnTasoNakyvyys, bnTasoYlos, bnTasoAlas, bnTasoPoista);
         hbTaso.setSpacing(10);
-        lbTasoNakyvyys = new Label("Näkyvyys");
+        lbTasoNakyvyys = new Label("Tason näkyvyys");
         slTasoNakyvyys = new Slider(0, 100, 100);
 
         vbVasen.getChildren().addAll(hbVari,
@@ -236,7 +236,7 @@ public class NayttoPiirto extends Application implements Naytto {
                     pikseleitaX,
                     pikseleitaY);
         } else {
-            try {
+            try { // TODO avaamisessa ei tule pikselit mukana
                 ObjectInputStream fileInput = new ObjectInputStream(
                         new FileInputStream(tiedosto + ".dat"));
 
@@ -285,7 +285,8 @@ public class NayttoPiirto extends Application implements Naytto {
             tfB.setPrefWidth(40);
 
             GridPane gpVarit = new GridPane();
-            gpVarit.setHgap(5);
+            gpVarit.setHgap(8);
+            gpVarit.setVgap(5);
             gpVarit.add(lbR, 0, 0);
             gpVarit.add(lbG, 0, 1);
             gpVarit.add(lbB, 0, 2);
@@ -293,8 +294,8 @@ public class NayttoPiirto extends Application implements Naytto {
             gpVarit.add(tfG, 1, 1);
             gpVarit.add(tfB, 1, 2);
 
-            Rectangle rtVariUusi = new Rectangle(50, 50, valittuVari);
-            Rectangle rtVariVanha = new Rectangle(50, 50, valittuVari);
+            Rectangle rtVariUusi = new Rectangle(40, 40, valittuVari);
+            Rectangle rtVariVanha = new Rectangle(40, 40, valittuVari);
             VBox vbVarit = new VBox(rtVariUusi, rtVariVanha);
 
             HBox hbVarit = new HBox(gpVarit, vbVarit);
@@ -338,7 +339,8 @@ public class NayttoPiirto extends Application implements Naytto {
                 variStage.close();
             });
 
-            Scene tallennusScene = new Scene(vbVariVal, 150, 150);
+            Scene tallennusScene = new Scene(vbVariVal, 200, 180);
+            variStage.setTitle("Väri");
             variStage.setScene(tallennusScene);
             variStage.show();
         });
@@ -423,12 +425,24 @@ public class NayttoPiirto extends Application implements Naytto {
                         piirtoAlue.setPikseli(valittuTaso, x, y, Color.TRANSPARENT, 100, valittuPaksuus);
                     }
                     break;
-                // Tämä ei ehtinyt valmistua, mutta jätin sen koodiin. Nyt se vain täyttää koko PiirtoAlueen.
+                /*
+                Täyttö ei ehtinyt valmistua, mutta jätin sen koodiin. Nyt se vain täyttää pikseleitä
+                koko PiirtoAlueesta eikä vain suljettua aluetta.
+                 */
                 case "täyttö":
+                    Color alkuvari = piirtoAlue.getPikseli(valittuTaso, x, y).getVari();
                     Pikseli[][] pikselit = piirtoAlue.getTaso(valittuTaso).getPikselit();
-                    for (int xP = 0; xP < pikselit.length; xP++) {
-                        for (int yP = 0; yP < pikselit.length; yP++) {
-                            pikselit[x][y].setPikseli(valittuVari, valittuNakyvyys);
+                    for (int xP = 0; xP < pikseleitaX; xP++) {
+                        for (int yP = 0; yP < pikseleitaY; yP++) {
+                            Pikseli p = pikselit[xP][yP];
+                            /*
+                            Täytetään pikseli uudella värillä jos sen värin "etäisyys" toisesta väristä on
+                            tarpeeksi alhainen. Etäisyyden raja-arvo on nyt kovakoodattu, mutta sen voisi
+                            korvata käyttäjän valinnalla.
+                             */
+                            if (Vari.etaisyys(p.getVari(), alkuvari) < 300) {
+                                p.setPikseli(vari, valittuNakyvyys);
+                            }
                         }
                     }
                     break;
@@ -443,7 +457,8 @@ public class NayttoPiirto extends Application implements Naytto {
         piirtoAlue.addEventHandler(MouseEvent.MOUSE_DRAGGED, tkPiirto);
 
         // Takaisin päävalikkoon, viedään tämä NäyttöPiirto mukana
-        bnTakaisin.setOnAction(e -> new NayttoAlku().start(this, stage)); // TODO
+        // TODO ehkä tarkistus että onko muutoksia vielä tehty aiemmin jo tallennettuun tiedostoon, ja se näytettäisiin NäyttöAlku-valikossa ehkä nimellä plus * ja italic
+        bnTakaisin.setOnAction(e -> new NayttoAlku().start(this, stage));
 
         // Tallentaminen
         bnTallenna.setOnAction(e -> { // TODO erilliseen luokkaan koodin siistimiseksi

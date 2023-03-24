@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * Ruudukko neliöitä, joita voi värittää. Useita tasoja voi luoda.
+ * Ruudukko {@link Pikseli Pikseleitä}, joita voi värittää. Useita tasoja voi luoda.
  */
 public class PiirtoAlue extends StackPane implements Serializable {
     private double pikseliReunaPituus;
@@ -23,6 +23,15 @@ public class PiirtoAlue extends StackPane implements Serializable {
     private Ruudukko ruudukko;
     private boolean ruudukkoPiilotettu = true;
 
+    /**
+     * Luo uuden PiirtoAlueen annetulla leveydellä, korkeudella ja pikselien määrillä.
+     * Todellinen leveys ja korkeus riippuvat pikselien määristä, sillä pikselit
+     * ovat aina neliön muotoisia.
+     * @param leveys PiirtoAlueen leveys kuvapisteissä
+     * @param korkeus PiirtoAlueen korkeus kuvapisteissä
+     * @param pikseleitaX PiirtoAlueen leveys pikseleissä
+     * @param pikseleitaY PiirtoAlueen korkeus pikseleissä
+     */
     public PiirtoAlue(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
         super();
         this.pikseliReunaPituus = Math.min(leveys / (double) pikseleitaX, korkeus / (double) pikseleitaY);
@@ -43,6 +52,17 @@ public class PiirtoAlue extends StackPane implements Serializable {
         toggleRuudukko();
     }
 
+    /**
+     * Luo uuden PiirtoAlueen annetulla leveydellä, korkeudella, pikselien määrillä ja
+     * {@link #tallennus() tallennus-metodilla} tallennetuilla tasojen tiedoilla.
+     * Todellinen leveys ja korkeus riippuvat pikselien määristä, sillä pikselit
+     * ovat aina neliön muotoisia.
+     * @param leveys PiirtoAlueen leveys kuvapisteissä
+     * @param korkeus PiirtoAlueen korkeus kuvapisteissä
+     * @param pikseleitaX PiirtoAlueen leveys pikseleissä
+     * @param pikseleitaY PiirtoAlueen korkeus pikseleissä
+     * @param o Tiedot tallennetuista tasoista
+     */
     public PiirtoAlue(double leveys, double korkeus, int pikseleitaX, int pikseleitaY, Object[] o) {
         super();
         this.pikseliReunaPituus = Math.min(leveys / (double) pikseleitaX, korkeus / (double) pikseleitaY);
@@ -68,6 +88,9 @@ public class PiirtoAlue extends StackPane implements Serializable {
         setRuudukkoPiilotettu((Boolean) o[1]);
     }
 
+    /**
+     * @return Piirtoalueen tasojen lukumäärä
+     */
     public int getTasoMaara() {
         return tasot.size();
     }
@@ -84,10 +107,19 @@ public class PiirtoAlue extends StackPane implements Serializable {
         return tasonimet;
     }
 
+    /**
+     * Palauttaa {@link PiirtoTaso PiirtoTason} annetusta PiirtoAlueen tasojen indeksistä.
+     * @param taso Tason indeksi
+     * @return Taso-olio
+     */
     public PiirtoTaso getTaso(int taso) {
         return tasot.get(taso);
     }
 
+    /**
+     * Lisää annetulla nimellä nimetyn PiirtoTason PiirtoAlueeseen päällimmäiseksi.
+     * @param nimi PiirtoTason nimi
+     */
     public void lisaaTaso(String nimi) {
         PiirtoTaso t = new PiirtoTaso(nimi);
         tasot.add(t);
@@ -99,10 +131,17 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
     }
 
+    /**
+     * Lisää PiirtoTason oletusnimellä PiirtoAlueeseen päällimmäiseksi.
+     */
     public void lisaaTaso() {
         lisaaTaso("");
     }
 
+    /**
+     * Lisää {@link #tallennus() tallennus-metodilla} tallennetun tason PiirtoAlueeseen päällimmäiseksi.
+     * @param o Tallennetun tason tiedot
+     */
     private void lisaaTaso(Object[] o) { // TODO koodin toistoa
         PiirtoTaso t = new PiirtoTaso(o);
         tasot.add(t);
@@ -114,18 +153,26 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
     }
 
+    /**
+     * Poistaa PiirtoAlueesta tason annetusta indeksistä.
+     * @param taso Poistettavan tason indeksi
+     */
     public void poistaTaso(int taso) {
         tasot.remove(taso);
         this.getChildren().remove(taso);
     }
 
+    /**
+     * Piilottaa tai näyttää PiirtoAlueesta tason annetusta indeksistä.
+     * @param taso Piilotettavan/Näytettävän tason indeksi
+     */
     public void toggleTaso(int taso) {
         tasot.get(taso).toggleNakyvyys();
     }
 
     /**
      * Siirtää annettua tasoa annetun määrän tasoja ylös.
-     * @param taso Mitä tasoa siirretään
+     * @param taso Siirrettävän tason indeksi
      * @param maara Kuinka monta tasoa ylös siirretään. Negatiivinen arvo siirtää alaspäin.
      */
     public void siirraTaso(int taso, int maara) {
@@ -143,6 +190,9 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
     }
 
+    /**
+     * @param ruudukkoPiilotettu Onko PiirtoAlueen ruudukko piilotettu vai ei
+     */
     private void setRuudukkoPiilotettu(boolean ruudukkoPiilotettu) {
         this.ruudukkoPiilotettu = ruudukkoPiilotettu;
         if (ruudukkoPiilotettu) {
@@ -152,20 +202,32 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
     }
 
+    /**
+     * Näyttää tai piilottaa PiirtoAlueen ruudukon.
+     */
     public void toggleRuudukko() {
         setRuudukkoPiilotettu(!ruudukkoPiilotettu);
     }
 
     // TODO nämä metodit PiirtoTasoon
-    public Pikseli getPikseli(int taso, int x, int y) {
+    /**
+     * Palauttaa {@link Pikseli Pikselin} annetulta tasolta kohdasta, jossa ikkunan
+     * kuvapistekoordinaatit ovat x ja y.
+     * @param taso Indeksi tasolle, josta haetaan pikseliä
+     * @param x X-koordinaatti
+     * @param y Y-koordinaatti
+     * @return
+     */
+    public Pikseli getPikseli(int taso, int x, int y) { // TODO tämä ja alempi on eri tavoilla toteutettuja, yhtenäistä
         return tasot.get(taso).
                 getPikseli((int) (x / leveys * pikseleitaX), (int) (y / korkeus * pikseleitaY));
     }
 
     /**
      * Etsii PiirtoAlueen pikselin annettujen koordinaattien perusteella ja muuttaa tämän väriä ja näkyvyyttä.
-     * @param x Pikselin x-koordinaatti
-     * @param y Pikselin y-koordinaatti
+     * @param taso Indeksi tasolle, josta haetaan pikseliä
+     * @param x X-koordinaatti
+     * @param y Y-koordinaatti
      * @param vari Pikselin uusi väri
      * @param nakyvyys Pikselin uusi näkyvyys
      */
@@ -194,13 +256,12 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
     }
 
-    // TODO tallennukseen!
     /**
      * Object-taulukko PiirtoAlueen tallentamista varten.
      * @return Tasot, ruudukkoPiilotettu, valittuTaso
      */
     public Object[] tallennus() {
-        Object[][] tasotTallennus = new Object[tasot.size()][4]; // TODO 4 voi muuttua
+        Object[][] tasotTallennus = new Object[tasot.size()][4]; // Kovakoodattu palautettavien alkioiden määrä, voi muuttua :(
         for (int i = 0; i < tasot.size(); i++) {
             tasotTallennus[i] = tasot.get(i).tallennus();
         }

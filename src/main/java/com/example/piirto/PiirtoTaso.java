@@ -10,7 +10,7 @@ import java.io.Serializable;
  * {@link Pikseli Pikseleitä}.
  */
 public class PiirtoTaso extends Pane implements Serializable {
-    /**
+    /** TODO tarvitseeko näitä
      * Piirtotason leveys kuvapisteissä.
      */
     private static double leveys;
@@ -205,6 +205,10 @@ public class PiirtoTaso extends Pane implements Serializable {
         this.setOpacity(nakyvyys / 100d);
     }
 
+    public boolean getPiilotettu() {
+        return piilotettu;
+    }
+
     public void setPiilotettu(boolean piilotettu) {
         this.piilotettu = piilotettu;
         this.setVisible(!piilotettu);
@@ -233,7 +237,7 @@ public class PiirtoTaso extends Pane implements Serializable {
     /**
      * Täyttää tason {@link #tallennus() tallennus-metodilla} tallennetuilla
      * {@link Pikseli Pikseleillä}.
-     * @param o
+     * @param o Tiedot tallennetuista pikseleistä
      */
     private void tayta(Object[][][] o) {
         for (int x = 0; x < pikseleitaX; x++) {
