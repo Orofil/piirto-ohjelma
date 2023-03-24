@@ -6,6 +6,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -39,12 +40,13 @@ public class Main extends Application {
     private int pikseleitaX = 76;
     private int pikseleitaY = 50;
 
-    private String tiedosto;
+    private String tiedosto = "";
 
     private String valittuTyokalu = "piirto";
     private Color valittuVari = Color.BLACK;
     private int valittuNakyvyys = 100;
     private int valittuPaksuus = 1;
+    private int valittuTaso;
 
     // TODO tänne kaikki komponentit niin niitä voi käyttää startin ulkopuolella
     Scene sceneAlku, scenePiirto;
@@ -62,6 +64,7 @@ public class Main extends Application {
                     TextField tfPiksY;
                     CheckBox cbPiksSuhde;
             Label lbAvaa;
+            VBox vbAvaa;
         VBox vbAlkuvalikkoOikea;
             ImageView imgAlkuvalikko;
             Text txAlkuvalikko;
@@ -96,10 +99,19 @@ public class Main extends Application {
                 Button bnTasoPoista;
             Label lbTasoNakyvyys;
             Slider slTasoNakyvyys;
-        HBox hbAla;
-        // TODO
-            Button bnTakaisin;
-            Button bnTallenna;
+        BorderPane bpAla;
+            HBox hbAlaVasen;
+                ToggleButton bnPiirto;
+                ToggleButton bnPoisto;
+                ToggleButton bnTaytto;
+                ToggleButton bnVarinpoimija;
+                ToggleGroup tgTyokalu;
+            HBox hbAlaKeski;
+                Button bnRuudukko;
+            HBox hbAlaOikea;
+                Button bnTakaisin;
+                Button bnTallenna;
+        PiirtoAlue piirtoAlue;
 
     double piksSuhde = (double) pikseleitaY / (double) pikseleitaX; // TODO ehkä eri luokkaan niiden yksien kanssa emt
 
@@ -139,7 +151,9 @@ public class Main extends Application {
         hbUusi = new HBox(bnUusi, gpUusiPiks);
         hbUusi.setSpacing(10);
 
-        vbAlkuvalikkoVasen = new VBox(lbLuo, hbUusi, lbAvaa);
+        vbAvaa = new VBox(5);
+
+        vbAlkuvalikkoVasen = new VBox(lbLuo, hbUusi, lbAvaa, vbAvaa);
         vbAlkuvalikkoVasen.setSpacing(40);
 
         if (new File(POLKU + "viimeisimmät.txt").isFile()) {
@@ -160,7 +174,7 @@ public class Main extends Application {
                     bnViimeisimmat[i] = bn;
                     // TODO kuva piirroksesta
 
-                    vbAlkuvalikkoVasen.getChildren().add(bnViimeisimmat[i]);
+                    vbAvaa.getChildren().add(bnViimeisimmat[i]);
 
                     int finalI = i;
                     bnViimeisimmat[i].setOnAction(e -> {
@@ -174,7 +188,7 @@ public class Main extends Application {
                 ex.printStackTrace();
             }
         } else {
-            vbAlkuvalikkoVasen.getChildren().add(new Text("Ei viimeisimpiä tiedostoja"));
+            vbAvaa.getChildren().add(new Text("Ei viimeisimpiä tiedostoja"));
         }
 
         imgAlkuvalikko = new ImageView(new Image(IMGPOLKU + "piirto-ohjelma.png"));
@@ -226,6 +240,8 @@ public class Main extends Application {
             } catch (NumberFormatException ignored) {}
         });
 
+        txAlkuvalikkoLinkki.setOnMouseEntered(e -> sceneAlku.setCursor(Cursor.HAND));
+        txAlkuvalikkoLinkki.setOnMouseExited(e -> sceneAlku.setCursor(Cursor.DEFAULT));
         txAlkuvalikkoLinkki.setOnMouseClicked(e ->
             getHostServices().showDocument("https://github.com/Orofil/piirto-ohjelma"));
 
@@ -307,47 +323,52 @@ public class Main extends Application {
                 hbTaso, lbTasoNakyvyys, slTasoNakyvyys);
 
         ///// Alavalikko
-        BorderPane ala = new BorderPane();
-        ala.setPadding(new Insets(10,10,10,10));
-        ala.setStyle("-fx-border-color: gray");
-        bpPiirto.setBottom(ala);
+        bpAla = new BorderPane();
+        bpAla.setPadding(new Insets(10,10,10,10));
+        bpAla.setStyle("-fx-border-color: gray");
+        bpPiirto.setBottom(bpAla);
 
-        Button bnPiirto = new Button();
+        bnPiirto = new ToggleButton();
         bnPiirto.setGraphic(new ImageView(new Image(IMGPOLKU + "kynä.png")));
-        Button bnPoisto = new Button();
+        bnPoisto = new ToggleButton();
         bnPoisto.setGraphic(new ImageView(new Image(IMGPOLKU + "kumi.png")));
-        Button bnTaytto = new Button();
+        bnTaytto = new ToggleButton();
         bnTaytto.setGraphic(new ImageView(new Image(IMGPOLKU + "ämpäri.png")));
-        Button bnVarinpoimija = new Button();
+        bnVarinpoimija = new ToggleButton();
         bnVarinpoimija.setGraphic(new ImageView(new Image(IMGPOLKU + "värinpoimija.png")));
 
-        Button bnRuudukko = new Button();
+        tgTyokalu = new ToggleGroup();
+        bnPiirto.setToggleGroup(tgTyokalu);
+        bnPoisto.setToggleGroup(tgTyokalu);
+        bnTaytto.setToggleGroup(tgTyokalu);
+        bnVarinpoimija.setToggleGroup(tgTyokalu);
+        bnPiirto.fire();
+
+        bnRuudukko = new Button();
         bnRuudukko.setGraphic(new ImageView(new Image(IMGPOLKU + "ruudukko.png")));
         bnRuudukko.setAlignment(Pos.CENTER);
 
-//        bnUndo = new Button("Undo"); // TODO pois palautuksessa
-//        bnRedo = new Button("Redo");
         bnTakaisin = new Button("Takaisin");
         bnTallenna = new Button("Tallenna");
         bnTakaisin.setFont(Font.font(18));
         bnTallenna.setFont(Font.font("", FontWeight.BOLD, 24));
 
-        HBox alaVasen = new HBox(10);
-        alaVasen.getChildren().addAll(bnPiirto, bnPoisto, bnTaytto, bnVarinpoimija);
-        HBox alaKeski = new HBox(10);
-        alaKeski.setAlignment(Pos.CENTER);
-        alaKeski.getChildren().add(bnRuudukko);
-        HBox alaOikea = new HBox(10);
-        alaOikea.setAlignment(Pos.CENTER_RIGHT);
-        alaOikea.getChildren().addAll(bnTakaisin, bnTallenna);
+        hbAlaVasen = new HBox(10);
+        hbAlaVasen.getChildren().addAll(bnPiirto, bnPoisto, bnTaytto, bnVarinpoimija);
+        hbAlaKeski = new HBox(10);
+        hbAlaKeski.setAlignment(Pos.CENTER);
+        hbAlaKeski.getChildren().add(bnRuudukko);
+        hbAlaOikea = new HBox(10);
+        hbAlaOikea.setAlignment(Pos.CENTER_RIGHT);
+        hbAlaOikea.getChildren().addAll(bnTakaisin, bnTallenna);
 
-        ala.setLeft(alaVasen);
-        ala.setCenter(alaKeski);
-        ala.setRight(alaOikea);
+        bpAla.setLeft(hbAlaVasen);
+        bpAla.setCenter(hbAlaKeski);
+        bpAla.setRight(hbAlaOikea);
 
 
         ///// Piirtoalue
-        PiirtoAlue piirtoAlue = new PiirtoAlue(
+        piirtoAlue = new PiirtoAlue(
                 LEVEYS - VASENLEVEYS, // TODO tässä voisi olla dynaamiset luvut
                 KORKEUS - ALAKORKEUS,
                 pikseleitaX,
@@ -456,17 +477,25 @@ public class Main extends Application {
         tasot.getSelectionModel().select(0);
 
         // Aktiivisen tason valinta
-        tasot.getSelectionModel().selectedItemProperty().addListener(ov ->
-            piirtoAlue.setValittuTaso(tasot.getSelectionModel().getSelectedIndex())
-        );
+        tasot.getSelectionModel().selectedItemProperty().addListener(ob ->
+                valittuTaso = tasot.getSelectionModel().getSelectedIndex());
 
         // Tason muokkausnapit
-        // TODO
         bnTasoNakyvyys.setOnAction(e ->
-            piirtoAlue.toggleTaso(piirtoAlue.getValittuTasoNro())); // TODO tämän voisi tehdä ehkä kompaktimmin tuolla piirtotasossa
+                piirtoAlue.toggleTaso(valittuTaso));
+
+        bnTasoYlos.setOnAction(e ->
+                piirtoAlue.siirraTaso(valittuTaso, 1));
+        bnTasoAlas.setOnAction(e ->
+                piirtoAlue.siirraTaso(valittuTaso, -1));
+
+        bnTasoPoista.setOnAction(e -> {
+            piirtoAlue.poistaTaso(valittuTaso);
+
+        });
 
         slTasoNakyvyys.valueProperty().addListener(ov ->
-            piirtoAlue.getValittuTaso().setNakyvyys((int) slTasoNakyvyys.getValue()));
+                piirtoAlue.getTaso(valittuTaso).setNakyvyys((int) slTasoNakyvyys.getValue()));
 
         // Työkalut
         bnPiirto.setOnAction(e -> valittuTyokalu = "piirto");
@@ -489,27 +518,27 @@ public class Main extends Application {
             switch (valittuTyokalu) {
                 case "piirto":
                     if (valittuPaksuus == 1) {
-                        piirtoAlue.setPikseli(x, y, vari, valittuNakyvyys);
+                        piirtoAlue.setPikseli(valittuTaso, x, y, vari, valittuNakyvyys);
                     } else {
-                        piirtoAlue.setPikseli(x, y, vari, valittuNakyvyys, valittuPaksuus);
+                        piirtoAlue.setPikseli(valittuTaso, x, y, vari, valittuNakyvyys, valittuPaksuus);
                     }
                     break;
                 case "poisto":
                     if (valittuPaksuus == 1) {
-                        piirtoAlue.setPikseli(x, y, Color.TRANSPARENT, 100);
+                        piirtoAlue.setPikseli(valittuTaso, x, y, Color.TRANSPARENT, 100);
                     } else {
-                        piirtoAlue.setPikseli(x, y, Color.TRANSPARENT, 100, valittuPaksuus);
+                        piirtoAlue.setPikseli(valittuTaso, x, y, Color.TRANSPARENT, 100, valittuPaksuus);
                     }
                     break;
                 case "täyttö":  // TODO täyttö
                     if (valittuPaksuus == 1) {
-                        piirtoAlue.setPikseli(x, y, valittuVari, valittuNakyvyys);
+                        piirtoAlue.setPikseli(valittuTaso, x, y, valittuVari, valittuNakyvyys);
                     } else {
-                        piirtoAlue.setPikseli(x, y, valittuVari, valittuNakyvyys, valittuPaksuus);
+                        piirtoAlue.setPikseli(valittuTaso, x, y, valittuVari, valittuNakyvyys, valittuPaksuus);
                     }
                     break;
                 case "värinpoimija":
-                    Pikseli pikseli = piirtoAlue.getPikseli(x, y);
+                    Pikseli pikseli = piirtoAlue.getPikseli(valittuTaso, x, y);
                     setValittuVari(pikseli.getVari());
                     valittuNakyvyys = pikseli.getNakyvyys();
                     break;
@@ -530,7 +559,7 @@ public class Main extends Application {
             VBox vbTallennus = new VBox(10);
             vbTallennus.setPadding(new Insets(15));
             vbTallennus.getChildren().add(new Label("Tiedostonimi:"));
-            TextField tfTiedostonimi = new TextField();
+            TextField tfTiedostonimi = new TextField(tiedosto);
             Label lbTallennusHuom = new Label();
             lbTallennusHuom.setTextFill(Color.RED);
             Button bnTallennus = new Button("Tallenna");
@@ -540,14 +569,24 @@ public class Main extends Application {
             tallennusStage.setScene(tallennusScene);
             tallennusStage.show();
 
-            // Huomautetaan, jos tiedosto on jo olemassa
+
+            /*
+            Huomautetaan, jos tiedosto on jo olemassa ja kielletään tallentaminen jos nimi on tyhjä.
+            Muuta tiedostonimen validaatiota ei nyt ole :(
+             */
+            if (!tiedosto.equals("")) {
+                lbTallennusHuom.setText("HUOM: Tiedosto on jo olemassa!");
+            }
             tfTiedostonimi.setOnKeyTyped(e1 -> {
                 if (new File(tfTiedostonimi.getText() + ".dat").isFile()) { // TODO ehkä tarkista onko laillinen tiedostonimi
                     lbTallennusHuom.setText("HUOM: Tiedosto on jo olemassa!");
                 } else {
                     lbTallennusHuom.setText("");
                 }
+                bnTallennus.setDisable(tfTiedostonimi.getText().equals(""));
             });
+
+            // Tallentaminen
             bnTallennus.setOnAction(e1 -> {
 
                 try { // TODO tallennusjuttu, tärkeä!
@@ -570,7 +609,7 @@ public class Main extends Application {
 
                     // Tallennetaan tieto viimeisimmistä tiedostoista
                     File viimeisimmat = new File(POLKU + "viimeisimmät.txt");
-                    if (!viimeisimmat.createNewFile()) {
+                    if (viimeisimmat.createNewFile()) {
                         FileWriter writer = new FileWriter(viimeisimmat);
                         writer.write(tiedostonimi);
                         writer.close();
@@ -626,6 +665,14 @@ public class Main extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    public void sceneAlku(Stage stage) {
+        stage.setScene(sceneAlku);
+    }
+
+    public void scenePiirto(Stage stage) {
+        stage.setScene(scenePiirto);
     }
 
     public void setValittuVari(Color vari) {

@@ -22,7 +22,6 @@ public class PiirtoAlue extends StackPane implements Serializable {
     private ArrayList<PiirtoTaso> tasot = new ArrayList<>();
     private Ruudukko ruudukko;
     private boolean ruudukkoPiilotettu = true;
-    private int valittuTaso;
     // TODO undo ja redo toiminnallisuus jotenkin ihmeellisesti
 
     public PiirtoAlue(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
@@ -68,27 +67,26 @@ public class PiirtoAlue extends StackPane implements Serializable {
         // Luodaan ruudukko
         ruudukko = new Ruudukko(leveys, korkeus, pikseleitaX, pikseleitaY);
         setRuudukkoPiilotettu((Boolean) o[1]);
-
-        // Valitaan oikea taso
-        setValittuTaso((Integer) o[2]);
     }
 
     public int getTasoMaara() {
         return tasot.size();
     }
 
-    // TODO onko nämä järkevät
-    public PiirtoTaso getValittuTaso() {
-        return tasot.get(valittuTaso);
+    /**
+     * Palauttaa PiirtoAlueen kaikkien tasojen nimet siinä järjestyksessä, mihin ne on asetettu.
+     * @return Taulukko tasojen nimistä
+     */
+    public String[] getTasoNimet() {
+        String[] tasonimet = new String[tasot.size()];
+        for (int i = 0; i < tasot.size(); i++) {
+            tasonimet[i] = tasot.get(i).getNimi();
+        }
+        return tasonimet;
     }
 
-    public int getValittuTasoNro() {
-        return valittuTaso;
-    }
-
-    public void setValittuTaso(int valittuTaso) {
-        this.valittuTaso = valittuTaso;
-        System.out.println("Valittu taso: " + valittuTaso); // TEMP
+    public PiirtoTaso getTaso(int taso) {
+        return tasot.get(taso);
     }
 
     public void lisaaTaso(String nimi) {
@@ -100,8 +98,6 @@ public class PiirtoAlue extends StackPane implements Serializable {
             this.getChildren().remove(ruudukko);
             this.getChildren().add(ruudukko);
         }
-        // Valitaan uusi taso
-        setValittuTaso(tasot.size() - 1);
     }
 
     public void lisaaTaso() {
@@ -119,32 +115,33 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
     }
 
+    public void poistaTaso(int taso) {
+        tasot.remove(taso);
+        this.getChildren().remove(taso);
+    }
+
     public void toggleTaso(int taso) {
         tasot.get(taso).toggleNakyvyys();
     }
 
     /**
-     * Siirtää valittua tasoa annetun määrän tasoja ylös.
+     * Siirtää annettua tasoa annetun määrän tasoja ylös.
+     * @param taso Mitä tasoa siirretään
      * @param maara Kuinka monta tasoa ylös siirretään. Negatiivinen arvo siirtää alaspäin.
      */
-    public void siirraTaso(int maara) {
-        // TODO https://stackoverflow.com/questions/17761415/how-to-change-order-of-children-in-javafx
-        // TODO laita lähde koodille
-        ObservableList<Node> workingCollection = FXCollections.observableArrayList(this.getChildren());
-        Collections.swap(workingCollection, valittuTaso, valittuTaso - maara); // TODO tarkistus ettei mene yli rajojen
-        this.getChildren().setAll(workingCollection); // TODO ruudukko
-    }
-
-    /**
-     * Palauttaa PiirtoAlueen kaikkien tasojen nimet siinä järjestyksessä, mihin ne on asetettu.
-     * @return Taulukko tasojen nimistä
-     */
-    public String[] getTasoNimet() {
-        String[] tasonimet = new String[tasot.size()];
-        for (int i = 0; i < tasot.size(); i++) {
-            tasonimet[i] = tasot.get(i).getNimi();
+    public void siirraTaso(int taso, int maara) {
+        // Liian suuri tason siirtomäärä korjataan
+        if (taso + maara < 0) {
+            maara = -taso;
+        } else if (taso + maara > tasot.size() - 2) { // -2 koska ei haluta mennä ruudukon päälle
+            maara = tasot.size() - 2 - taso;
         }
-        return tasonimet;
+        if (!(maara == 0)) {
+            // Lähde: Reegan Miranda https://stackoverflow.com/a/22069230/18611804
+            ObservableList<Node> workingCollection = FXCollections.observableArrayList(this.getChildren());
+            Collections.swap(workingCollection, taso, taso + maara);
+            this.getChildren().setAll(workingCollection);
+        }
     }
 
     private void setRuudukkoPiilotettu(boolean ruudukkoPiilotettu) {
@@ -160,8 +157,8 @@ public class PiirtoAlue extends StackPane implements Serializable {
         setRuudukkoPiilotettu(!ruudukkoPiilotettu);
     }
 
-    public Pikseli getPikseli(int x, int y) {
-        return tasot.get(valittuTaso).
+    public Pikseli getPikseli(int taso, int x, int y) {
+        return tasot.get(taso).
                 getPikseli((int) (x / leveys * pikseleitaX), (int) (y / korkeus * pikseleitaY));
     }
 
@@ -172,21 +169,26 @@ public class PiirtoAlue extends StackPane implements Serializable {
      * @param vari Pikselin uusi väri
      * @param nakyvyys Pikselin uusi näkyvyys
      */
-    public void setPikseli(int x, int y, Color vari, int nakyvyys) {
-        getPikseli(x, y).setPikseli(vari, nakyvyys);
+    public void setPikseli(int taso, int x, int y, Color vari, int nakyvyys) {
+        getPikseli(taso, x, y).setPikseli(vari, nakyvyys);
     }
 
-    // TODO paksuus piirto
-    public void setPikseli(int x, int y, Color vari, int nakyvyys, int paksuus) {
+    // TODO siirrä Mainiin
+    public void setPikseli(int taso, int x, int y, Color vari, int nakyvyys, int paksuus) {
         int pikseliX = (int) (x / leveys * pikseleitaX);
         int pikseliY = (int) (y / korkeus * pikseleitaY);
-        PiirtoTaso taso = tasot.get(valittuTaso);
+        PiirtoTaso Ptaso = tasot.get(taso);
         // TODO int castin sijaan läpinäkyvyyttä reunapikseleille
         for (int pX = (int) (pikseliX - ((paksuus / 2d) - 1)); pX < pikseliX + ((paksuus / 2d) + 1); pX++) {
             for (int pY = (int) (pikseliY - ((paksuus / 2d) - 1)); pY < pikseliY + ((paksuus / 2d) + 1); pY++) {
-                // TODO alue ei ole ympyrä vaan neliö, voi toki olla asetus
-                if (Math.sqrt(Math.pow(pX - pikseliX, 2) + Math.pow(pY - pikseliY, 2)) <= paksuus) {
-                    taso.getPikseli(pX, pY).setPikseli(vari, nakyvyys);
+                double etaisyys = Math.sqrt(Math.pow(pX - pikseliX, 2) + Math.pow(pY - pikseliY, 2));
+                double etaisyysReunasta = etaisyys - (paksuus / 2d) + 0.5;
+
+                // Reunojen pehmennys
+                if (etaisyysReunasta > 0 && etaisyysReunasta < 1) { // TODO ei toimi
+                    Ptaso.getPikseli(pX, pY).setPikseli(vari, (int) (nakyvyys * etaisyysReunasta));
+                } else if (etaisyys <= paksuus / 2d) {
+                    Ptaso.getPikseli(pX, pY).setPikseli(vari, nakyvyys);
                 }
             }
         }
@@ -204,8 +206,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
         }
         return new Object[] {
                 tasotTallennus,
-                ruudukkoPiilotettu,
-                valittuTaso
+                ruudukkoPiilotettu
         };
     }
 }
