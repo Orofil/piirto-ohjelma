@@ -56,10 +56,17 @@ public class Vari implements Serializable {
      * @param c Color-luokan olio
      */
     public Vari(Color c) {
-        r = (int) c.getRed();
-        g = (int) c.getGreen();
-        b = (int) c.getBlue();
+        r = (int) (c.getRed() * 255);
+        g = (int) (c.getGreen() * 255);
+        b = (int) (c.getBlue() * 255);
         a = c.getOpacity();
+    }
+
+    public Vari(Object[] o) {
+        r = (Integer) o[0];
+        g = (Integer) o[1];
+        b = (Integer) o[2];
+        a = (Double) o[3];
     }
 
     /**
@@ -76,5 +83,9 @@ public class Vari implements Serializable {
 
     public String toString() { // TEMP
         return "Väri: R = " + r + ", G = " + g + ", B = " + b + ", A = " + a;
+    }
+
+    public Object[] tallennus() {
+        return new Object[] {r, g, b, a};
     }
 }

@@ -22,7 +22,6 @@ public class PiirtoAlue extends StackPane implements Serializable {
     private ArrayList<PiirtoTaso> tasot = new ArrayList<>();
     private Ruudukko ruudukko;
     private boolean ruudukkoPiilotettu = true;
-    // TODO undo ja redo toiminnallisuus jotenkin ihmeellisesti
 
     public PiirtoAlue(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
         super();
@@ -33,8 +32,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
         this.pikseleitaY = pikseleitaY;
 
         // Asetetaan mitat pikseleille
-        PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY); // TODO näitä kaikkia ei kai tarvita
-//        Pikseli.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
+        PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
         Pikseli.setReunaPituus(pikseliReunaPituus);
 
         // Luodaan ensimmäinen taso
@@ -54,9 +52,10 @@ public class PiirtoAlue extends StackPane implements Serializable {
         this.pikseleitaY = pikseleitaY;
 
         // Asetetaan mitat pikseleille
-        PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY); // TODO näitä kaikkia ei kai tarvita
-//        Pikseli.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
+        PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
         Pikseli.setReunaPituus(pikseliReunaPituus);
+
+        System.out.println("Luodaan PiirtoAlue objektista"); // TEMP
 
         // Luodaan tasot
         Object[][] tasot = (Object[][]) o[0];
@@ -157,6 +156,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
         setRuudukkoPiilotettu(!ruudukkoPiilotettu);
     }
 
+    // TODO nämä metodit PiirtoTasoon
     public Pikseli getPikseli(int taso, int x, int y) {
         return tasot.get(taso).
                 getPikseli((int) (x / leveys * pikseleitaX), (int) (y / korkeus * pikseleitaY));
@@ -173,7 +173,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
         getPikseli(taso, x, y).setPikseli(vari, nakyvyys);
     }
 
-    // TODO siirrä Mainiin
+    // TODO siirrä Mainiin paksu piirto
     public void setPikseli(int taso, int x, int y, Color vari, int nakyvyys, int paksuus) {
         int pikseliX = (int) (x / leveys * pikseleitaX);
         int pikseliY = (int) (y / korkeus * pikseleitaY);

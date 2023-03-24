@@ -1,6 +1,7 @@
 package com.example.piirto;
 
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 
 import java.io.Serializable;
 
@@ -96,6 +97,8 @@ public class PiirtoTaso extends Pane implements Serializable {
     public PiirtoTaso(Object[] o) {
         super();
 
+        System.out.println("Luodaan PiirtoTaso objektista"); // TEMP
+
         tasoNro++;
         nimi = (String) o[0];
 
@@ -117,6 +120,10 @@ public class PiirtoTaso extends Pane implements Serializable {
      */
     public static void setTasoNro(int tasoNro) {
         PiirtoTaso.tasoNro = tasoNro;
+    }
+
+    public Pikseli[][] getPikselit() {
+        return pikselit;
     }
 
     /**
@@ -163,6 +170,10 @@ public class PiirtoTaso extends Pane implements Serializable {
                 pikselit[x][y + 1],
                 pikselit[x + 1][y]
         };
+    }
+
+    public void setPikseli(int x, int y, Color vari, int nakyvyys) {
+        pikselit[x][y].setPikseli(vari, nakyvyys);
     }
 
     /**
@@ -227,7 +238,7 @@ public class PiirtoTaso extends Pane implements Serializable {
     private void tayta(Object[][][] o) {
         for (int x = 0; x < pikseleitaX; x++) {
             for (int y = 0; y < pikseleitaY; y++) {
-                Pikseli p = new Pikseli(x, y, ((Vari) o[x][y][0]).toColor(), (Integer) o[x][y][1]);
+                Pikseli p = new Pikseli(x, y, new Vari((Object[]) o[x][y][0]).toColor(), (Integer) o[x][y][1]);
                 pikselit[x][y] = p;
                 this.getChildren().add(p);
             }

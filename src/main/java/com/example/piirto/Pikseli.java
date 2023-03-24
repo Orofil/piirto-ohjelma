@@ -30,18 +30,6 @@ public class Pikseli extends Rectangle implements Serializable {
     }
 
     /**
-     * Asettaa Pikselille sopivan {@link #reunaPituus reunaPituuden} ympäröivän
-     * {@link PiirtoAlue PiirtoAlueen} mittojen mukaan.
-     * @param alueLeveys PiirtoAlueen leveys kuvapisteissä
-     * @param alueKorkeus PiirtoAlueen korkeus kuvapisteissä
-     * @param pikseleitaX PiirtoAlueen leveys Pikseleissä
-     * @param pikseleitaY PiirtoAlueen korkeus Pikseleissä
-     */
-    public static void setMitat(double alueLeveys, double alueKorkeus, int pikseleitaX, int pikseleitaY) {
-        Pikseli.reunaPituus = Math.min(alueLeveys / (double) pikseleitaX, alueKorkeus / (double) pikseleitaY);
-    }
-
-    /**
      * Luo Pikselin annettuun sijaintiin (sarake ja rivi) annetulla
      * värillä ja läpinäkyvyydellä.
      * @param x Pikselin sarake (x-koordinaatti)
@@ -49,9 +37,11 @@ public class Pikseli extends Rectangle implements Serializable {
      * @param vari Pikselin väri
      * @param nakyvyys Pikselin (läpi)näkyvyys asteikolla 0-100
      */
-    public Pikseli(double x, double y, Color vari, int nakyvyys) {
-        // Lisätään leveyteen ja korkeuteen vähän, jotta pikselien väleissä ei näy valkoista
-        // TODO tee niin scuffed että jos näkyvyys on 100 niin +0.7 mittoihin mutta muuten ei, koska overlap
+    public Pikseli(int x, int y, Color vari, int nakyvyys) {
+        /*
+        Lisätään leveyteen ja korkeuteen vähän, jotta pikselien väleissä ei näy valkoista.
+        Toisaalta se aiheuttaa alemmilla näkyvyyksillä tummia viivoja pikselien väleihin.
+         */
         super(x * reunaPituus, y * reunaPituus, reunaPituus + 0.7, reunaPituus + 0.7);
         this.setFill(vari);
 
@@ -65,7 +55,7 @@ public class Pikseli extends Rectangle implements Serializable {
      * @param y Pikselin rivi (y-koordinaatti)
      * @param vari Pikselin väri
      */
-    public Pikseli(double x, double y, Color vari) {
+    public Pikseli(int x, int y, Color vari) {
         this(x, y, vari, 100);
     }
 
@@ -75,7 +65,7 @@ public class Pikseli extends Rectangle implements Serializable {
      * @param x Pikselin sarake (x-koordinaatti)
      * @param y Pikselin rivi (y-koordinaatti)
      */
-    public Pikseli(double x, double y) {
+    public Pikseli(int x, int y) {
         this(x, y, Color.TRANSPARENT, 100); // TODO tämä voi olla valkoinen jos läpinäkyvyys toteutetaan
     }
 
@@ -83,10 +73,10 @@ public class Pikseli extends Rectangle implements Serializable {
      * Luo Pikselin {@link #tallennus() tallennus-metodilla} tallennettujen tietojen pohjalta.
      * @param o X, Y, väri, näkyvyys
      */
-    public Pikseli(Object[] o) {
+    public Pikseli(Object[] o) { // TODO ei tarvita
         this(
-                (Double) o[0],
-                (Double) o[1],
+                (Integer) o[0],
+                (Integer) o[1],
                 ((Vari) o[2]).toColor(),
                 (Integer) o[3]);
     }
@@ -141,8 +131,8 @@ public class Pikseli extends Rectangle implements Serializable {
      */
     public Object[] tallennus() {
         return new Object[] {
-                Vari.toVari((Color) this.getFill()),
-                this.getOpacity()
+                Vari.toVari((Color) this.getFill()).tallennus(),
+                (int) this.getOpacity()
         };
     }
 }
