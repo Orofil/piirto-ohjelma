@@ -81,43 +81,11 @@ public class Vari implements Serializable {
         return new Vari(c);
     }
 
-    public String toString() { // TEMP
+    public String toString() {
         return "Väri: R = " + r + ", G = " + g + ", B = " + b + ", A = " + a;
     }
 
     public Object[] tallennus() {
         return new Object[] {r, g, b, a};
-    }
-
-    /**
-     * Palauttaa kahden värin (Vari) etäisyyden toisistaan, eli värien
-     * punaisten, vihreiden ja sinisten arvojen erotusten summan painotettuna
-     * värien näkyvyyksillä.
-     * <br>
-     * Summa voi saada arvoja välillä 0-765.
-     * @param v1 Vari 1
-     * @param v2 Vari 2
-     * @return Värien 1 ja 2 etäisyys
-     */
-    public static double etaisyys(Vari v1, Vari v2) {
-        // TODO HSL vertaus koska tämä on huoooono
-        double a1 = Math.abs(1 - v1.a);
-        double a2 = Math.abs(1 - v2.a);
-        // Tätä olisi varmaan voinut sieventää paremmaksi
-        return Math.abs(v1.r*a1 - v2.r*a2) + Math.abs(v1.g*a1 - v2.g*a2) + Math.abs(v1.b*a1 - v2.b*a2);
-    }
-
-    /**
-     * Palauttaa kahden värin (Color) etäisyyden toisistaan, eli värien
-     * punaisten, vihreiden ja sinisten arvojen erotusten summan painotettuna
-     * värien näkyvyyksillä.
-     * <br>
-     * Summa voi saada arvoja välillä 0-765.
-     * @param c1 Color 1
-     * @param c2 Color 2
-     * @return Värien 1 ja 2 etäisyys
-     */
-    public static double etaisyys(Color c1, Color c2) {
-        return etaisyys(Vari.toVari(c1), Vari.toVari(c2));
     }
 }

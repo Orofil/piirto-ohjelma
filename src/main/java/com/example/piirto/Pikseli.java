@@ -3,13 +3,11 @@ package com.example.piirto;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-import java.io.Serializable;
-
 /**
  * Suorakulmio, joka toimii {@link PiirtoTaso PiirtoTasolla} muokattavana
  * pikselinä.
  */
-public class Pikseli extends Rectangle implements Serializable {
+public class Pikseli extends Rectangle {
     /**
      * Yksittäisen pikselin reunan pituus.
      */
@@ -66,25 +64,13 @@ public class Pikseli extends Rectangle implements Serializable {
      * @param y Pikselin rivi (y-koordinaatti)
      */
     public Pikseli(int x, int y) {
-        this(x, y, Color.TRANSPARENT, 100); // TODO tämä voi olla valkoinen jos läpinäkyvyys toteutetaan
-    }
-
-    /**
-     * Luo Pikselin {@link #tallennus() tallennus-metodilla} tallennettujen tietojen pohjalta.
-     * @param o X, Y, väri, näkyvyys
-     */
-    public Pikseli(Object[] o) { // TODO ei tarvita
-        this(
-                (Integer) o[0],
-                (Integer) o[1],
-                ((Vari) o[2]).toColor(),
-                (Integer) o[3]);
+        this(x, y, Color.TRANSPARENT, 100);
     }
 
     /**
      * @return Pikselin väri
      */
-    public Color getVari() { // TODO ei kai näitä tarvitse
+    public Color getVari() {
         return (Color) this.getFill();
     }
 
@@ -106,7 +92,7 @@ public class Pikseli extends Rectangle implements Serializable {
      * @param nakyvyys Pikselin läpinäkyvyys asteikolla 0-100
      */
     public void setNakyvyys(int nakyvyys) {
-        if (nakyvyys < 0) { // TODO tarvitseeko tätä
+        if (nakyvyys < 0) {
             this.setOpacity(0);
         } else if (nakyvyys > 100) {
             this.setOpacity(1);
@@ -132,7 +118,7 @@ public class Pikseli extends Rectangle implements Serializable {
     public Object[] tallennus() {
         return new Object[] {
                 Vari.toVari((Color) this.getFill()).tallennus(),
-                (int) this.getOpacity()
+                (int) (this.getOpacity() * 100)
         };
     }
 }

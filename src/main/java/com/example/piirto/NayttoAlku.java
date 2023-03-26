@@ -32,33 +32,55 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NayttoAlku extends Application implements Naytto {
     private int pikseleitaX = Main.pikseleitaX;
     private int pikseleitaY = Main.pikseleitaY;
+    /**
+     * Uuden kuvan pikselien määrien välinen suhde.
+     */
     double piksSuhde = (double) pikseleitaY / (double) pikseleitaX;
 
+    /**
+     * Avattavan tiedoston nimi.
+     */
     private String tiedosto = "";
 
+    /**
+     * Aiemmin avattuna ollut tallentaton tiedosto.
+     */
     private NayttoPiirto avattuPiirto;
 
-    Scene scene;
-        BorderPane bpAlkuvalikko;
-            VBox vbAlkuvalikkoVasen;
-                Label lbLuo;
-                HBox hbUusi;
-                    Button bnUusi;
-                    GridPane gpUusiPiks;
-                        Label lbPiksX; // TODO näitä ei varmaan kaikkia tarvitsisi määritellä erikseen, ainakaan Labeleita joilla ei ole toiminnallisuutta
-                        Label lbPiksY;
-                        Label lbPiksSuhde;
-                        TextField tfPiksX;
-                        TextField tfPiksY;
-                        CheckBox cbPiksSuhde;
-                Label lbAvaa;
-                VBox vbAvaa;
-            VBox vbAlkuvalikkoOikea;
-                ImageView imgAlkuvalikko;
-                Text txAlkuvalikko;
-                Text txAlkuvalikkoLinkki;
+    ///// Määritellään graafiset komponentit
+    /*
+    Graafiset komponentit on sisennetty sen mukaan, mikä niiden hierarkia on
+    ikkunassa. Tämä on ehkä hieman outo menetelmä, mutta näin nyt kokeilin
+    tehdä ja tämä toimii. Kaikkia ei tässä vaiheessa tarvitsisi määritellä,
+    kuten IntelliJ huomauttaa, mutta ihan sama :)
+     */
+    private Scene scene;
+        private BorderPane bpAlkuvalikko;
+            private VBox vbAlkuvalikkoVasen;
+                private Label lbLuo;
+                private HBox hbUusi;
+                    private Button bnUusi;
+                    private GridPane gpUusiPiks;
+                        private Label lbPiksX;
+                        private Label lbPiksY;
+                        private Label lbPiksSuhde;
+                        private TextField tfPiksX;
+                        private TextField tfPiksY;
+                        private CheckBox cbPiksSuhde;
+                private Label lbAvaa;
+                private VBox vbAvaa;
+            private VBox vbAlkuvalikkoOikea;
+                private ImageView imgAlkuvalikko;
+                private Text txAlkuvalikko;
+                private Text txAlkuvalikkoLinkki;
 
 
+    /**
+     * Vaihtaa näytöksi alkunäytön ja näyttää annetun tallentamattoman piirtonäkymän
+     * avattavien tiedostojen listassa.
+     * @param avattuPiirto NayttoPiirto, josta ollaan tultu NayttoAlkuun
+     * @param stage Stage
+     */
     public void start(NayttoPiirto avattuPiirto, Stage stage) {
         this.avattuPiirto = avattuPiirto;
         start(stage);
@@ -66,6 +88,7 @@ public class NayttoAlku extends Application implements Naytto {
 
     @Override
     public void start(Stage stage) {
+        // Vasen valikko
         lbLuo = new Label("Luo uusi");
         lbAvaa = new Label("Avaa");
         lbLuo.setFont(Font.font(24));
@@ -125,15 +148,17 @@ public class NayttoAlku extends Application implements Naytto {
                 }
 
                 for (int i = 0; i < viimeisimmatTiedostot.size(); i++) {
-                    Button bn = new Button(viimeisimmatTiedostot.get(i));
-                    bn.setPrefWidth(250);
-                    bn.setFont(Font.font(18));
+                    if (vbAvaa.getChildren().size() < 6) { // Viimeisimpiä tiedostoja voi olla näkyvissä enintään 6
+                        Button bn = new Button(viimeisimmatTiedostot.get(i));
+                        bn.setPrefWidth(250);
+                        bn.setFont(Font.font(18));
 
-                    vbAvaa.getChildren().add(bn);
+                        vbAvaa.getChildren().add(bn);
 
-                    // Toiminnallisuus, avaa uuden piirtonäytön (a.k.a. NäyttöPiirto) valitulla tiedostonimellä
-                    int finalI = i;
-                    bn.setOnAction(e -> new NayttoPiirto().start(viimeisimmatTiedostot.get(finalI), stage));
+                        // Toiminnallisuus, avaa uuden piirtonäytön (a.k.a. NayttoPiirto) valitulla tiedostonimellä
+                        int finalI = i;
+                        bn.setOnAction(e -> new NayttoPiirto().start(viimeisimmatTiedostot.get(finalI), stage));
+                    }
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -144,6 +169,7 @@ public class NayttoAlku extends Application implements Naytto {
             vbAvaa.getChildren().add(new Text("Ei viimeisimpiä tiedostoja"));
         }
 
+        // Oikea valikko
         imgAlkuvalikko = new ImageView(new Image(IMGPOLKU + "piirto-ohjelma.png"));
         txAlkuvalikko = new Text("""
                 Piirto-ohjelma, jonka nimi on luovasti "piirto-ohjelma"
@@ -153,7 +179,7 @@ public class NayttoAlku extends Application implements Naytto {
                                     
                 Jaakko Saano (Orofil), 2023""");
         txAlkuvalikko.setTextAlignment(TextAlignment.RIGHT);
-        txAlkuvalikkoLinkki = new Text("github.com/Orofil/piirto-ohjelma"); // TODO linkin avautuminen
+        txAlkuvalikkoLinkki = new Text("github.com/Orofil/piirto-ohjelma");
         txAlkuvalikkoLinkki.setUnderline(true);
         txAlkuvalikkoLinkki.setFill(Color.web("#0000EE"));
 
@@ -165,20 +191,26 @@ public class NayttoAlku extends Application implements Naytto {
         bpAlkuvalikko.setLeft(vbAlkuvalikkoVasen);
         bpAlkuvalikko.setRight(vbAlkuvalikkoOikea);
 
+
         ///// Toiminnallisuus
+
+        // Luodaan uusi NayttoPiirto ja näytetään se
         bnUusi.setOnAction(e ->
             new NayttoPiirto().start(
                     Integer.parseInt(tfPiksX.getText()),
                     Integer.parseInt(tfPiksY.getText()),
                     tiedosto, stage));
 
+        // Kelvollisten kuvan mittojen validaatio
         tfPiksX.setOnKeyTyped(e -> {
             int x;
             if (cbPiksSuhde.isSelected()) {
                 try {
                     x = Integer.parseInt(tfPiksX.getText());
-                    bnUusi.setDisable(false);
-                    tfPiksY.setText(String.valueOf((int) Math.round(x * piksSuhde)));
+                    if (x > 0) {
+                        bnUusi.setDisable(false);
+                        tfPiksY.setText(String.valueOf((int) Math.round(x * piksSuhde)));
+                    }
                 } catch (NumberFormatException ignored) {
                     bnUusi.setDisable(true);
                 }
@@ -189,8 +221,10 @@ public class NayttoAlku extends Application implements Naytto {
             if (cbPiksSuhde.isSelected()) {
                 try {
                     y = Integer.parseInt(tfPiksY.getText());
-                    bnUusi.setDisable(false);
-                    tfPiksX.setText(String.valueOf((int) Math.round(y / piksSuhde)));
+                    if (y > 0) {
+                        bnUusi.setDisable(false);
+                        tfPiksX.setText(String.valueOf((int) Math.round(y / piksSuhde)));
+                    }
                 } catch (NumberFormatException ignored) {
                     bnUusi.setDisable(true);
                 }

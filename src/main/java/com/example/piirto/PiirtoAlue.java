@@ -13,14 +13,38 @@ import java.util.Collections;
 /**
  * Ruudukko {@link Pikseli Pikseleitä}, joita voi värittää. Useita tasoja voi luoda.
  */
-public class PiirtoAlue extends StackPane implements Serializable {
+public class PiirtoAlue extends StackPane {
+    /**
+     * Yksittäisen {@link Pikseli Pikselin} reunan pituus.
+     */
     private double pikseliReunaPituus;
+    /**
+     * PiirtoAlueen leveys kuvapisteissä.
+     */
     private double leveys;
+    /**
+     * PiirtoAlueen korkeus kuvapisteissä.
+     */
     private double korkeus;
+    /**
+     * PiirtoAlueen leveys {@link Pikseli Pikseleissä}.
+     */
     private int pikseleitaX;
+    /**
+     * PiirtoAlueen korkeus {@link Pikseli Pikseleissä}.
+     */
     private int pikseleitaY;
+    /**
+     * Lista PiirtoAlueen {@link PiirtoTaso PiirtoTasoista}.
+     */
     private ArrayList<PiirtoTaso> tasot = new ArrayList<>();
+    /**
+     * Ruudukko, joka osoittaa Pikselien rajat.
+     */
     private Ruudukko ruudukko;
+    /**
+     * Onko ruudukko piilotettu vai ei.
+     */
     private boolean ruudukkoPiilotettu = true;
 
     /**
@@ -75,8 +99,6 @@ public class PiirtoAlue extends StackPane implements Serializable {
         PiirtoTaso.setMitat(this.leveys, this.korkeus, this.pikseleitaX, this.pikseleitaY);
         Pikseli.setReunaPituus(pikseliReunaPituus);
 
-        System.out.println("Luodaan PiirtoAlue objektista"); // TEMP
-
         // Luodaan tasot
         Object[][] tasot = (Object[][]) o[0];
         for (Object[] oTaso : tasot) {
@@ -100,11 +122,11 @@ public class PiirtoAlue extends StackPane implements Serializable {
      * @return Taulukko tasojen nimistä
      */
     public String[] getTasoNimet() {
-        String[] tasonimet = new String[tasot.size()];
+        String[] tasoNimet = new String[tasot.size()];
         for (int i = 0; i < tasot.size(); i++) {
-            tasonimet[i] = tasot.get(i).getNimi();
+            tasoNimet[i] = tasot.get(i).getNimi();
         }
-        return tasonimet;
+        return tasoNimet;
     }
 
     /**
@@ -142,7 +164,7 @@ public class PiirtoAlue extends StackPane implements Serializable {
      * Lisää {@link #tallennus() tallennus-metodilla} tallennetun tason PiirtoAlueeseen päällimmäiseksi.
      * @param o Tallennetun tason tiedot
      */
-    private void lisaaTaso(Object[] o) { // TODO koodin toistoa
+    private void lisaaTaso(Object[] o) {
         PiirtoTaso t = new PiirtoTaso(o);
         tasot.add(t);
         this.getChildren().add(t);
@@ -174,26 +196,36 @@ public class PiirtoAlue extends StackPane implements Serializable {
      * Siirtää annettua tasoa annetun määrän tasoja ylös.
      * @param taso Siirrettävän tason indeksi
      * @param maara Kuinka monta tasoa ylös siirretään. Negatiivinen arvo siirtää alaspäin.
+     * @return Kuinka monen tason verran tasoa siirrettiin ylös.
      */
-    public void siirraTaso(int taso, int maara) {
+    public int siirraTaso(int taso, int maara) {
         // Liian suuri tason siirtomäärä korjataan
         if (taso + maara < 0) {
             maara = -taso;
-        } else if (taso + maara > tasot.size() - 2) { // -2 koska ei haluta mennä ruudukon päälle
-            maara = tasot.size() - 2 - taso;
+        } else if (taso + maara > tasot.size() - 1) {
+            maara = tasot.size() - 1 - taso;
         }
         if (!(maara == 0)) {
+            Collections.swap(tasot, taso, taso + maara);
             // Lähde: Reegan Miranda https://stackoverflow.com/a/22069230/18611804
-            ObservableList<Node> workingCollection = FXCollections.observableArrayList(this.getChildren());
-            Collections.swap(workingCollection, taso, taso + maara);
-            this.getChildren().setAll(workingCollection);
+            ObservableList<Node> childrenSwap = FXCollections.observableArrayList(this.getChildren());
+            Collections.swap(childrenSwap, taso, taso + maara);
+            this.getChildren().setAll(childrenSwap);
         }
+        return maara;
+    }
+
+    /**
+     * @return Onko PiirtoAlueen ruudukko piilotettu vai ei
+     */
+    public boolean getRuudukkoPiilotettu() {
+        return ruudukkoPiilotettu;
     }
 
     /**
      * @param ruudukkoPiilotettu Onko PiirtoAlueen ruudukko piilotettu vai ei
      */
-    private void setRuudukkoPiilotettu(boolean ruudukkoPiilotettu) {
+    public void setRuudukkoPiilotettu(boolean ruudukkoPiilotettu) {
         this.ruudukkoPiilotettu = ruudukkoPiilotettu;
         if (ruudukkoPiilotettu) {
             this.getChildren().remove(ruudukko);
@@ -209,18 +241,21 @@ public class PiirtoAlue extends StackPane implements Serializable {
         setRuudukkoPiilotettu(!ruudukkoPiilotettu);
     }
 
-    // TODO nämä metodit PiirtoTasoon
     /**
      * Palauttaa {@link Pikseli Pikselin} annetulta tasolta kohdasta, jossa ikkunan
      * kuvapistekoordinaatit ovat x ja y.
      * @param taso Indeksi tasolle, josta haetaan pikseliä
      * @param x X-koordinaatti
      * @param y Y-koordinaatti
-     * @return
+     * @return Pikseli
      */
-    public Pikseli getPikseli(int taso, int x, int y) { // TODO tämä ja alempi on eri tavoilla toteutettuja, yhtenäistä
-        return tasot.get(taso).
-                getPikseli((int) (x / leveys * pikseleitaX), (int) (y / korkeus * pikseleitaY));
+    public Pikseli getPikseli(int taso, int x, int y) throws IllegalArgumentException {
+        try {
+            return tasot.get(taso).
+                    getPikseli((int) (x / leveys * pikseleitaX), (int) (y / korkeus * pikseleitaY));
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            throw new IllegalArgumentException("Annettu piste " + x + ", " + y + " on PiirtoAlueen ulkopuolella");
+        }
     }
 
     /**
@@ -232,26 +267,33 @@ public class PiirtoAlue extends StackPane implements Serializable {
      * @param nakyvyys Pikselin uusi näkyvyys
      */
     public void setPikseli(int taso, int x, int y, Color vari, int nakyvyys) {
-        getPikseli(taso, x, y).setPikseli(vari, nakyvyys);
+        try {
+            getPikseli(taso, x, y).setPikseli(vari, nakyvyys);
+        } catch (IllegalArgumentException ignored) {}
     }
 
-    // TODO siirrä Mainiin paksu piirto
+    /**
+     * Etsii PiirtoAlueen pikselin annettujen koordinaattien perusteella ja muuttaa tämän ja ympäröivien pikseleiden
+     * väriä ja näkyvyyttä. Paksuus määrittää, kuinka laajalta alueelta pikseleitä muutetaan.
+     * @param taso Indeksi tasolle, josta haetaan pikseliä
+     * @param x X-koordinaatti
+     * @param y Y-koordinaatti
+     * @param vari Pikselin uusi väri
+     * @param nakyvyys Pikselin uusi näkyvyys
+     * @param paksuus Kuinka laajalta alueelta pikseleitä muutetaan
+     */
     public void setPikseli(int taso, int x, int y, Color vari, int nakyvyys, int paksuus) {
         int pikseliX = (int) (x / leveys * pikseleitaX);
         int pikseliY = (int) (y / korkeus * pikseleitaY);
         PiirtoTaso Ptaso = tasot.get(taso);
-        // TODO int castin sijaan läpinäkyvyyttä reunapikseleille
         for (int pX = (int) (pikseliX - ((paksuus / 2d) - 1)); pX < pikseliX + ((paksuus / 2d) + 1); pX++) {
             for (int pY = (int) (pikseliY - ((paksuus / 2d) - 1)); pY < pikseliY + ((paksuus / 2d) + 1); pY++) {
-                double etaisyys = Math.sqrt(Math.pow(pX - pikseliX, 2) + Math.pow(pY - pikseliY, 2));
-                double etaisyysReunasta = etaisyys - (paksuus / 2d) + 0.5;
-
-                // Reunojen pehmennys
-                if (etaisyysReunasta > 0 && etaisyysReunasta < 1) { // TODO ei toimi
-                    Ptaso.getPikseli(pX, pY).setPikseli(vari, (int) (nakyvyys * etaisyysReunasta));
-                } else if (etaisyys <= paksuus / 2d) {
-                    Ptaso.getPikseli(pX, pY).setPikseli(vari, nakyvyys);
-                }
+                // Väritetään ympyrän muotoinen alue
+                try {
+                    if (Math.sqrt(Math.pow(pX - pikseliX, 2) + Math.pow(pY - pikseliY, 2)) <= paksuus / 2d) {
+                        Ptaso.getPikseli(pX, pY).setPikseli(vari, nakyvyys);
+                    }
+                } catch (ArrayIndexOutOfBoundsException ignored) {}
             }
         }
     }

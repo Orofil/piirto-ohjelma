@@ -2,6 +2,7 @@ package com.example.piirto;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -9,6 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
@@ -26,6 +28,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.imageio.ImageIO;
 
 public class NayttoPiirto extends Application implements Naytto {
     private int pikseleitaX = Main.pikseleitaX;
@@ -34,14 +37,20 @@ public class NayttoPiirto extends Application implements Naytto {
     protected int VASENLEVEYS = Main.VASENLEVEYS;
     protected int ALAKORKEUS = Main.ALAKORKEUS;
 
-    private String tiedosto;
+    /**
+     * Avattavan/avatun tiedoston nimi.
+     */
+    private String tiedosto = "";
 
     private String valittuTyokalu = Main.valittuTyokalu;
     private Color valittuVari = Main.valittuVari;
     private int valittuNakyvyys = Main.valittuNakyvyys;
     private int valittuPaksuus = Main.valittuPaksuus;
-    private int valittuTaso;
+    private int valittuTaso = 0;
 
+    /**
+     * Fontti pienille, lihavoiduille otsikoille.
+     */
     private final Font fonttiOtsikko = Font.font("", FontWeight.BOLD, 12);
 
     ///// Määritellään graafiset komponentit
@@ -57,12 +66,12 @@ public class NayttoPiirto extends Application implements Naytto {
             private HBox hbVari;
                 private VBox vbVari;
                     private Label lbVari;
-                    private RadioButton variMusta;
-                    private RadioButton variPunainen;
-                    private RadioButton variSininen;
-                    private RadioButton variMuu; // Näkymätön RadioButton muille väreille valittavaksi
+                    private RadioButton rbVariMusta;
+                    private RadioButton rbVariPunainen;
+                    private RadioButton rbVariSininen;
+                    private RadioButton rbVariMuu; // Näkymätön RadioButton muille väreille valittavaksi
                     private ToggleGroup tgVarit;
-                    private Button variValikko;
+                    private Button bnVariValikko;
                 private Rectangle rtVari;
             private Label lbPaksuus;
             private Slider slPaksuus;
@@ -94,6 +103,13 @@ public class NayttoPiirto extends Application implements Naytto {
                 private Button bnTallenna;
         private PiirtoAlue piirtoAlue;
 
+    /**
+     * Vaihtaa näytöksi piirtonäytön ja asettaa {@link PiirtoAlue PiirtoAlueen} koon ja siihen avattavan tiedoston.
+     * @param pikseleitaX PiirtoAlueen leveys Pikseleissä
+     * @param pikseleitaY PiirtoAlueen korkeus Pikseleissä
+     * @param tiedosto Avattavan tiedoston nimi
+     * @param stage Stage
+     */
     public void start(int pikseleitaX, int pikseleitaY, String tiedosto, Stage stage) {
         this.pikseleitaX = pikseleitaX;
         this.pikseleitaY = pikseleitaY;
@@ -101,6 +117,11 @@ public class NayttoPiirto extends Application implements Naytto {
         start(stage);
     }
 
+    /**
+     * Vaihtaa näytöksi piirtonäytön ja asettaa {@link PiirtoAlue PiirtoAlueelle} avattavan tiedoston.
+     * @param tiedosto Avattavan tiedoston nimi
+     * @param stage Stage
+     */
     public void start(String tiedosto, Stage stage) {
         start(pikseleitaX, pikseleitaY, tiedosto, stage);
     }
@@ -108,6 +129,40 @@ public class NayttoPiirto extends Application implements Naytto {
     @Override
     public void start(Stage stage) {
         bpPiirto = new BorderPane();
+
+
+        ///// Piirtoalue
+
+        // Luodaan tyhjä PiirtoAlue
+        if (tiedosto == null || tiedosto.equals("")) {
+            piirtoAlue = new PiirtoAlue(
+                    LEVEYS - VASENLEVEYS,
+                    KORKEUS - ALAKORKEUS,
+                    pikseleitaX,
+                    pikseleitaY);
+        }
+        // Luodaan PiirtoAlue kuvasta
+        else {
+            try {
+                ObjectInputStream fileInput = new ObjectInputStream(
+                        new FileInputStream(tiedosto + ".dat"));
+
+                Object[] tallennetut = (Object[]) fileInput.readObject();
+
+                pikseleitaX = (Integer) tallennetut[2];
+                pikseleitaY = (Integer) tallennetut[3];
+                piirtoAlue = new PiirtoAlue((Integer) tallennetut[0],
+                        (Integer) tallennetut[1],
+                        pikseleitaX,
+                        pikseleitaY,
+                        (Object[]) tallennetut[4]);
+            } catch (IOException | ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        }
+        piirtoAlue.setStyle("-fx-background-color: white");
+        bpPiirto.setCenter(piirtoAlue);
+
 
         ///// Vasen valikko
         vbVasen = new VBox(5);
@@ -117,71 +172,80 @@ public class NayttoPiirto extends Application implements Naytto {
 
         lbVari = new Label("Värit");
         lbVari.setFont(fonttiOtsikko);
-        variMusta = new RadioButton("Musta");
-        variPunainen = new RadioButton("Punainen");
-        variSininen = new RadioButton("Sininen");
-        variMuu = new RadioButton();
+        rbVariMusta = new RadioButton("Musta");
+        rbVariPunainen = new RadioButton("Punainen");
+        rbVariSininen = new RadioButton("Sininen");
+        rbVariMuu = new RadioButton();
 
         tgVarit = new ToggleGroup();
-        variMusta.setToggleGroup(tgVarit);
-        variPunainen.setToggleGroup(tgVarit);
-        variSininen.setToggleGroup(tgVarit);
-        variMuu.setToggleGroup(tgVarit);
+        rbVariMusta.setToggleGroup(tgVarit);
+        rbVariPunainen.setToggleGroup(tgVarit);
+        rbVariSininen.setToggleGroup(tgVarit);
+        rbVariMuu.setToggleGroup(tgVarit);
 
-        variMusta.fire();
-        variValikko = new Button("Väri");
+        rbVariMusta.fire();
+        bnVariValikko = new Button("Väri");
 
         vbVari = new VBox(5);
-        vbVari.getChildren().addAll(lbVari, variMusta, variPunainen, variSininen, variValikko);
+        vbVari.getChildren().addAll(lbVari, rbVariMusta, rbVariPunainen, rbVariSininen, bnVariValikko);
 
         rtVari = new Rectangle(40, 40, valittuVari);
 
         hbVari = new HBox(70);
         hbVari.getChildren().addAll(vbVari, rtVari);
 
-
-        // TODO tooltipit näiden arvolle tai johonkin muuhun labeliin tai siis Textiin
-        lbPaksuus = new Label("Paksuus");
-        lbPaksuus.setFont(fonttiOtsikko);
         slPaksuus = new Slider(1, 100, 1);
         slPaksuus.setShowTickLabels(true);
+        slPaksuus.setBlockIncrement(5);
+        lbPaksuus = new Label("Paksuus: " + (int) slPaksuus.getValue());
+        lbPaksuus.setFont(fonttiOtsikko);
 
-        lbNakyvyys = new Label("Näkyvyys");
-        lbNakyvyys.setFont(fonttiOtsikko);
         slNakyvyys = new Slider(0, 100, 100);
         slNakyvyys.setShowTickLabels(true);
+        slNakyvyys.setBlockIncrement(5);
+        lbNakyvyys = new Label("Näkyvyys: " + (int) slNakyvyys.getValue());
+        lbNakyvyys.setFont(fonttiOtsikko);
 
         lbTasot = new Label("Tasot");
         lbTasot.setFont(fonttiOtsikko);
         bnUusiTaso = new Button("+");
         tfUusiTaso = new TextField();
-        tfUusiTaso.setPromptText("Taso 2");
+        tfUusiTaso.setPromptText("Taso " + (PiirtoTaso.getTasoNro() + 1));
         hbUusiTaso = new HBox(bnUusiTaso, tfUusiTaso);
         hbUusiTaso.setSpacing(10);
 
         tasot = new ListView<>();
-        tasot.setPrefWidth(140); // TODO tämän ei kannata olla vakio
+        tasot.setPrefWidth(140); // Kovakoodattu leveys :(((
+        // Alussa luodaan lista tasoista ja valitaan ensimmäinen
+        tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
+        tasot.getSelectionModel().select(0);
 
         bnTasoNakyvyys = new Button();
         bnTasoYlos = new Button();
         bnTasoAlas = new Button();
         bnTasoPoista = new Button();
-        // TODO kuvat on liian leveitä
-        bnTasoNakyvyys.setGraphic(new ImageView(new Image(IMGPOLKU + "silmä_auki.png"))); // TODO vaihtuva kuva
+        // Asetetaan kuvat nappeihin
+        setBnTasoNakyvyysKuva();
         bnTasoYlos.setGraphic(new ImageView(new Image(IMGPOLKU + "nuoli_ylös.png")));
         bnTasoAlas.setGraphic(new ImageView(new Image(IMGPOLKU + "nuoli_alas.png")));
         bnTasoPoista.setGraphic(new ImageView(new Image(IMGPOLKU + "x.png")));
+        if (piirtoAlue.getTasoMaara() == 1) {
+            bnTasoPoista.setDisable(true);
+        }
 
         hbTaso = new HBox(bnTasoNakyvyys, bnTasoYlos, bnTasoAlas, bnTasoPoista);
         hbTaso.setSpacing(10);
-        lbTasoNakyvyys = new Label("Tason näkyvyys");
         slTasoNakyvyys = new Slider(0, 100, 100);
+        slTasoNakyvyys.setBlockIncrement(5);
+        slTasoNakyvyys.setValue(piirtoAlue.getTaso(valittuTaso).getNakyvyys());
+        lbTasoNakyvyys = new Label("Tason näkyvyys: " + (int) slTasoNakyvyys.getValue());
 
         vbVasen.getChildren().addAll(hbVari,
                 lbPaksuus, slPaksuus,
                 lbNakyvyys, slNakyvyys,
                 lbTasot, hbUusiTaso, tasot,
                 hbTaso, lbTasoNakyvyys, slTasoNakyvyys);
+
 
         ///// Alavalikko
         bpAla = new BorderPane();
@@ -193,6 +257,7 @@ public class NayttoPiirto extends Application implements Naytto {
         bnPoisto = new ToggleButton();
         bnTaytto = new ToggleButton();
         bnVarinpoimija = new ToggleButton();
+        // Asetetaan kuvat nappeihin
         bnPiirto.setGraphic(new ImageView(new Image(IMGPOLKU + "kynä.png")));
         bnPoisto.setGraphic(new ImageView(new Image(IMGPOLKU + "kumi.png")));
         bnTaytto.setGraphic(new ImageView(new Image(IMGPOLKU + "ämpäri.png")));
@@ -228,45 +293,16 @@ public class NayttoPiirto extends Application implements Naytto {
         bpAla.setRight(hbAlaOikea);
 
 
-        ///// Piirtoalue
-        if (tiedosto == null || tiedosto.equals("")) {
-            piirtoAlue = new PiirtoAlue(
-                    LEVEYS - VASENLEVEYS, // TODO tässä voisi olla dynaamiset luvut
-                    KORKEUS - ALAKORKEUS,
-                    pikseleitaX,
-                    pikseleitaY);
-        } else {
-            try { // TODO avaamisessa ei tule pikselit mukana
-                ObjectInputStream fileInput = new ObjectInputStream(
-                        new FileInputStream(tiedosto + ".dat"));
-
-                Object[] tallennetut = (Object[]) fileInput.readObject();
-
-                pikseleitaX = (Integer) tallennetut[2];
-                pikseleitaY = (Integer) tallennetut[3];
-                System.out.println("Luodaan uusi PiirtoAlue objektista"); // TEMP
-                piirtoAlue = new PiirtoAlue((Integer) tallennetut[0],
-                        (Integer) tallennetut[1],
-                        pikseleitaX,
-                        pikseleitaY,
-                        (Object[]) tallennetut[4]);
-                System.out.println("PiirtoAlue luotu"); // TEMP
-            } catch (IOException | ClassNotFoundException ex) {
-                ex.printStackTrace();
-            }
-        }
-        piirtoAlue.setStyle("-fx-background-color: white");
-        bpPiirto.setCenter(piirtoAlue);
-
-
         ///// Toiminnallisuus
+
         // Värien valinta
-        variMusta.setOnAction(e -> setValittuVari(Color.BLACK));
-        variPunainen.setOnAction(e -> setValittuVari(Color.RED));
-        variSininen.setOnAction(e -> setValittuVari(Color.BLUE));
+        rbVariMusta.setOnAction(e -> setValittuVari(Color.BLACK));
+        rbVariPunainen.setOnAction(e -> setValittuVari(Color.RED));
+        rbVariSininen.setOnAction(e -> setValittuVari(Color.BLUE));
         // Pop-up-ikkuna värin valitsemiseksi
-        variValikko.setOnAction(e -> { // TODO erilliseen luokkaan koodin siistimiseksi
-            AtomicInteger r = new AtomicInteger(); // TODO ei tarvitse olla atomic integer jos on erillisessä luokassa
+        bnVariValikko.setOnAction(e -> {
+            // AtomicInteger tekee näistä laillisia muuttaa anonyymissä luokassa
+            AtomicInteger r = new AtomicInteger();
             AtomicInteger g = new AtomicInteger();
             AtomicInteger b = new AtomicInteger();
 
@@ -346,51 +382,64 @@ public class NayttoPiirto extends Application implements Naytto {
         });
 
         // Paksuuden säätö
-        slPaksuus.valueProperty().addListener(ov ->
-                valittuPaksuus = (int) slPaksuus.getValue());
+        slPaksuus.valueProperty().addListener(ob -> {
+            valittuPaksuus = (int) slPaksuus.getValue();
+            lbPaksuus.setText("Paksuus: " + valittuPaksuus);
+        });
 
         // Läpinäkyvyyden säätö
-        slNakyvyys.valueProperty().addListener(ov ->
-                valittuNakyvyys = (int) slNakyvyys.getValue());
+        slNakyvyys.valueProperty().addListener(ob -> {
+            valittuNakyvyys = (int) slNakyvyys.getValue();
+            lbNakyvyys.setText("Näkyvyys: " + valittuNakyvyys);
+        });
 
         // Tason lisäys
         bnUusiTaso.setOnAction(e -> {
             piirtoAlue.lisaaTaso(tfUusiTaso.getText());
             tfUusiTaso.setText("");
             tfUusiTaso.setPromptText("Taso " + (PiirtoTaso.getTasoNro() + 1));
-            // Päivitetään tasojen lista
+            // Päivitetään tasojen lista ja valitaan uusi taso
             tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
-            tasot.getSelectionModel().select(piirtoAlue.getTasoMaara() - 1);
-            tasot.scrollTo(piirtoAlue.getTasoMaara() - 1);
+            setValittuTaso(piirtoAlue.getTasoMaara() - 1);
+            bnTasoPoista.setDisable(false); // Tasoja voi taas poistaa
         });
 
-        // Alussa luodaan lista tasoista ja valitaan ensimmäinen
-        tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
-        tasot.getSelectionModel().select(0);
-
-        // Aktiivisen tason valinta
+        // Listasta klikatun tason valinta
         tasot.getSelectionModel().selectedItemProperty().addListener(ob ->
-                valittuTaso = tasot.getSelectionModel().getSelectedIndex());
+                setValittuTaso(tasot.getSelectionModel().getSelectedIndex()));
 
         // Tason muokkausnapit
-        // TODO napit ei toimi vielä kunnolla
         bnTasoNakyvyys.setOnAction(e -> {
             piirtoAlue.toggleTaso(valittuTaso);
-            // TODO kuvan vaihto
+            // Päivitetään tason näkyvyyden kuvake
+            setBnTasoNakyvyysKuva();
         });
 
-        bnTasoYlos.setOnAction(e ->
-                piirtoAlue.siirraTaso(valittuTaso, 1)); // TODO virhettä antaa jos on ylhäällä
-        bnTasoAlas.setOnAction(e ->
-                piirtoAlue.siirraTaso(valittuTaso, -1));
+        // Jos tasot menisivät listassa järkevästi alhaalta ylös, voisivat alla olevat määrä-argumenttien arvot vaihtaa paikkoja
+        bnTasoYlos.setOnAction(e -> {
+            piirtoAlue.siirraTaso(valittuTaso, -1);
+            tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
+            setValittuTaso(valittuTaso);
+        });
+        bnTasoAlas.setOnAction(e -> {
+            piirtoAlue.siirraTaso(valittuTaso, 1);
+            tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
+            setValittuTaso(valittuTaso);
+        });
 
         bnTasoPoista.setOnAction(e -> {
             piirtoAlue.poistaTaso(valittuTaso);
-            // TODO päivitä lista ja disable jos on vain yksi taso
+            tasot.setItems(FXCollections.observableArrayList(piirtoAlue.getTasoNimet()));
+            setValittuTaso(valittuTaso);
+            if (piirtoAlue.getTasoMaara() == 1) {
+                bnTasoPoista.setDisable(true);
+            }
         });
 
-        slTasoNakyvyys.valueProperty().addListener(ov ->
-                piirtoAlue.getTaso(valittuTaso).setNakyvyys((int) slTasoNakyvyys.getValue()));
+        slTasoNakyvyys.valueProperty().addListener(ov -> {
+            piirtoAlue.getTaso(valittuTaso).setNakyvyys((int) slTasoNakyvyys.getValue());
+            lbTasoNakyvyys.setText("Tason näkyvyys: " + (int) slTasoNakyvyys.getValue());
+        });
 
         // Työkalut
         bnPiirto.setOnAction(e -> valittuTyokalu = "piirto");
@@ -436,11 +485,10 @@ public class NayttoPiirto extends Application implements Naytto {
                         for (int yP = 0; yP < pikseleitaY; yP++) {
                             Pikseli p = pikselit[xP][yP];
                             /*
-                            Täytetään pikseli uudella värillä jos sen värin "etäisyys" toisesta väristä on
-                            tarpeeksi alhainen. Etäisyyden raja-arvo on nyt kovakoodattu, mutta sen voisi
-                            korvata käyttäjän valinnalla.
+                            Täytetään pikseli jos sen väri on täysin sama kuin klikatulla pikselillä.
+                            Voisi olla myös vähän liikkumavaraa värissä, mutta se käy vaikeaksi toteuttaa.
                              */
-                            if (Vari.etaisyys(p.getVari(), alkuvari) < 300) {
+                            if (p.getVari().equals(alkuvari)) {
                                 p.setPikseli(vari, valittuNakyvyys);
                             }
                         }
@@ -457,11 +505,10 @@ public class NayttoPiirto extends Application implements Naytto {
         piirtoAlue.addEventHandler(MouseEvent.MOUSE_DRAGGED, tkPiirto);
 
         // Takaisin päävalikkoon, viedään tämä NäyttöPiirto mukana
-        // TODO ehkä tarkistus että onko muutoksia vielä tehty aiemmin jo tallennettuun tiedostoon, ja se näytettäisiin NäyttöAlku-valikossa ehkä nimellä plus * ja italic
         bnTakaisin.setOnAction(e -> new NayttoAlku().start(this, stage));
 
         // Tallentaminen
-        bnTallenna.setOnAction(e -> { // TODO erilliseen luokkaan koodin siistimiseksi
+        bnTallenna.setOnAction(e -> {
             Stage tallennusStage = new Stage();
             tallennusStage.initModality(Modality.WINDOW_MODAL);
             tallennusStage.initOwner(stage);
@@ -470,25 +517,48 @@ public class NayttoPiirto extends Application implements Naytto {
             vbTallennus.setPadding(new Insets(15));
             vbTallennus.getChildren().add(new Label("Tiedostonimi:"));
             TextField tfTiedostonimi = new TextField(tiedosto);
+
+            RadioButton rbTallennusPiirto = new RadioButton("Piirto-ohjelman kuva");
+            RadioButton rbTallennusKuva = new RadioButton("PNG-kuva");
+            ToggleGroup tgTallennus = new ToggleGroup();
+            rbTallennusPiirto.setToggleGroup(tgTallennus);
+            rbTallennusKuva.setToggleGroup(tgTallennus);
+            rbTallennusPiirto.fire();
+            // Luodaan tooltipit tallennustyypeille, jotka näkyvät, kun kursoria pitää napin yllä
+            Tooltip ttTallennusPiirto = new Tooltip(
+                    "Kuvan voi avata ja sitä voi muokata piirto-ohjelmassa, mutta ei muualla.");
+            Tooltip ttTallennusKuva = new Tooltip(
+                    "Kuvaa voi tarkastella muilla ohjelmilla, mutta sitä ei voi enää avata tai muokata piirto-ohjelmassa.");
+            Tooltip.install(rbTallennusPiirto, ttTallennusPiirto);
+            Tooltip.install(rbTallennusKuva, ttTallennusKuva);
+
+            HBox hbTallennus = new HBox(rbTallennusPiirto, rbTallennusKuva);
+            hbTallennus.setSpacing(10);
+
             Label lbTallennusHuom = new Label();
             lbTallennusHuom.setTextFill(Color.RED);
             Button bnTallennus = new Button("Tallenna");
-            vbTallennus.getChildren().addAll(tfTiedostonimi, lbTallennusHuom, bnTallennus);
+            vbTallennus.getChildren().addAll(tfTiedostonimi, hbTallennus, lbTallennusHuom, bnTallennus);
 
-            Scene tallennusScene = new Scene(vbTallennus, 300, 150);
+            Scene tallennusScene = new Scene(vbTallennus, 300, 180);
+            tallennusStage.setTitle("Tallennus");
             tallennusStage.setScene(tallennusScene);
             tallennusStage.show();
 
-
-        /*
-        Huomautetaan, jos tiedosto on jo olemassa ja kielletään tallentaminen jos nimi on tyhjä.
-        Muuta tiedostonimen validaatiota ei nyt ole :(
-         */
+            /*
+            Huomautetaan, jos tiedosto on jo olemassa ja kielletään tallentaminen jos nimi on tyhjä.
+            Muuta tiedostonimen validaatiota ei nyt ole :(
+             */
             if (!tiedosto.equals("")) {
                 lbTallennusHuom.setText("HUOM: Tiedosto on jo olemassa!");
             }
+            /*
+            Tämä ei päivity silloin kun tiedostotyypin valinnan vaihtaa, koska se olisi vaatinut
+            vähän kikkailua jos koodin toistoa haluaa välttää.
+             */
             tfTiedostonimi.setOnKeyTyped(e1 -> {
-                if (new File(tfTiedostonimi.getText() + ".dat").isFile()) { // TODO ehkä tarkista onko laillinen tiedostonimi
+                String tiedostopaate = rbTallennusPiirto.isSelected() ? ".dat" : ".png";
+                if (new File(tfTiedostonimi.getText() + tiedostopaate).isFile()) {
                     lbTallennusHuom.setText("HUOM: Tiedosto on jo olemassa!");
                 } else {
                     lbTallennusHuom.setText("");
@@ -498,55 +568,76 @@ public class NayttoPiirto extends Application implements Naytto {
 
             // Tallentaminen
             bnTallennus.setOnAction(e1 -> {
-
                 try {
                     String tiedostonimi = tfTiedostonimi.getText();
 
-                    ObjectOutputStream fileOutput = new ObjectOutputStream(
-                            new FileOutputStream(tiedostonimi + ".dat"));
+                    // Piirto-ohjelman tiedoston tallennus
+                    if (rbTallennusPiirto.isSelected()) {
 
-                    Object[] tallennettavat = new Object[] {
-                            LEVEYS - VASENLEVEYS,
-                            KORKEUS - ALAKORKEUS,
-                            pikseleitaX,
-                            pikseleitaY,
-                            piirtoAlue.tallennus()
-                    };
-                    fileOutput.writeObject(tallennettavat);
+                        ObjectOutputStream fileOutput = new ObjectOutputStream(
+                                new FileOutputStream(tiedostonimi + ".dat"));
 
-                    fileOutput.close();
+                        Object[] tallennettavat = new Object[] {
+                                LEVEYS - VASENLEVEYS,
+                                KORKEUS - ALAKORKEUS,
+                                pikseleitaX,
+                                pikseleitaY,
+                                piirtoAlue.tallennus()
+                        };
+                        fileOutput.writeObject(tallennettavat);
 
-                    // Tallennetaan tieto viimeisimmistä tiedostoista
-                    File viimeisimmat = new File(POLKU + "viimeisimmät.txt");
-                    if (viimeisimmat.createNewFile()) {
-                        FileWriter writer = new FileWriter(viimeisimmat);
-                        writer.write(tiedostonimi);
-                        writer.close();
-                    } else {
-                        // Lisätään uusin tiedostonimi muiden eteen
-                        ArrayList<String> viimeisimmatTeksti = new ArrayList<>();
-                        viimeisimmatTeksti.add(tiedostonimi);
+                        fileOutput.close();
 
-                        Scanner scanner = new Scanner(viimeisimmat);
-                        while (scanner.hasNextLine()) {
-                            String nextLine = scanner.nextLine();
-                            // Jos sama tiedostonimi oli jo listassa, se jätetään pois
-                            if (!nextLine.equals(tiedostonimi)) {
-                                viimeisimmatTeksti.add(nextLine);
+                        // Tallennetaan tieto viimeisimmistä tiedostoista
+                        File viimeisimmat = new File(POLKU + "viimeisimmät.txt");
+                        if (viimeisimmat.createNewFile()) {
+                            FileWriter writer = new FileWriter(viimeisimmat);
+                            writer.write(tiedostonimi);
+                            writer.close();
+                        } else {
+                            // Lisätään uusin tiedostonimi muiden eteen
+                            ArrayList<String> viimeisimmatTeksti = new ArrayList<>();
+                            viimeisimmatTeksti.add(tiedostonimi);
+
+                            Scanner scanner = new Scanner(viimeisimmat);
+                            while (scanner.hasNextLine()) {
+                                String nextLine = scanner.nextLine();
+                                // Jos sama tiedostonimi oli jo listassa, se jätetään pois
+                                if (!nextLine.equals(tiedostonimi)) {
+                                    viimeisimmatTeksti.add(nextLine);
+                                }
                             }
+
+                            /*
+                            Poistetaan viimeinen nimi jos tiedostoja on yli 20
+                            (Ei mitään tiettyä syytä siihen miksi juuri 20)
+                             */
+                            if (viimeisimmatTeksti.size() > 20) {
+                                viimeisimmatTeksti.remove(viimeisimmatTeksti.size() - 1);
+                            }
+
+                            // Kirjoitetaan nimet tiedostoon
+                            FileWriter writer = new FileWriter(viimeisimmat);
+                            for (String nimi : viimeisimmatTeksti) {
+                                writer.write(nimi + System.lineSeparator());
+                            }
+                            writer.close();
+                        }
+                    // Tallennetaan png
+                    } else {
+                        // Piilotetaan ruudukko siksi aikaa kun tallennetaan, halusit tai et >:)
+                        boolean ruudukkoPiilotettu = piirtoAlue.getRuudukkoPiilotettu();
+                        piirtoAlue.setRuudukkoPiilotettu(true);
+                        WritableImage kuva = piirtoAlue.snapshot(null, null);
+                        if (!ruudukkoPiilotettu) {
+                            piirtoAlue.setRuudukkoPiilotettu(false);
                         }
 
-                        // Poistetaan viimeinen nimi jos tiedostoja on yli 6
-                        if (viimeisimmatTeksti.size() > 6) {
-                            viimeisimmatTeksti.remove(viimeisimmatTeksti.size() - 1);
-                        }
+                        File tiedosto = new File(tiedostonimi + ".png");
 
-                        // Kirjoitetaan nimet tiedostoon
-                        FileWriter writer = new FileWriter(viimeisimmat);
-                        for (String nimi : viimeisimmatTeksti) {
-                            writer.write(nimi + System.lineSeparator());
-                        }
-                        writer.close();
+                        // Kuvan tallennus
+                        // Lähde: http://www.java2s.com/example/java/javafx/save-javafx-writableimage.html
+                        ImageIO.write(SwingFXUtils.fromFXImage(kuva, null), "png", tiedosto);
                     }
 
                     tallennusStage.close();
@@ -565,20 +656,53 @@ public class NayttoPiirto extends Application implements Naytto {
         stage.show();
     }
 
+    /**
+     * Asettaa valitun värin ja päivittää siihen liittyvät graafiset komponentit.
+     * @param vari Uusi valittu väri
+     */
     public void setValittuVari(Color vari) {
         valittuVari = vari;
         rtVari.setFill(vari);
         if (vari.equals(Color.BLACK)) {
-            variMusta.fire();
+            rbVariMusta.fire();
         } else if (vari.equals(Color.RED)) {
-            variPunainen.fire();
+            rbVariPunainen.fire();
         } else if (vari.equals(Color.BLUE)) {
-            variSininen.fire();
+            rbVariSininen.fire();
         } else {
-            variMuu.fire();
+            rbVariMuu.fire();
         }
     }
 
+    /**
+     * Asettaa valitun tason ja päivittää siihen liittyvät graafiset komponentit.
+     * @param taso Uuden valitun tason indeksi
+     */
+    public void setValittuTaso(int taso) {
+        // Pidetään valittava taso tasojen määrän rajoissa
+        if (taso < 0) {
+            taso = 0;
+        } else if (taso >= piirtoAlue.getTasoMaara()) {
+            taso = piirtoAlue.getTasoMaara() - 1;
+        }
+        valittuTaso = taso;
+        tasot.getSelectionModel().select(taso);
+        tasot.scrollTo(taso);
+        setBnTasoNakyvyysKuva();
+        slTasoNakyvyys.setValue(piirtoAlue.getTaso(taso).getNakyvyys());
+    }
+
+    /**
+     * Päivittää graafisen komponentin bnTasoNakyvyys kuvakkeen valitun tason näkyvyyttä vastaavaksi.
+     */
+    private void setBnTasoNakyvyysKuva() {
+        bnTasoNakyvyys.setGraphic(new ImageView(new Image(IMGPOLKU +
+                (piirtoAlue.getTaso(valittuTaso).getPiilotettu() ? "silmä_kiinni.png" : "silmä_auki.png"))));
+    }
+
+    /**
+     * @return NäyttöPiirto-olion scene
+     */
     public Scene getScene() {
         return scene;
     }

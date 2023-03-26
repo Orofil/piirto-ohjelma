@@ -9,8 +9,8 @@ import java.io.Serializable;
  * {@link PiirtoAlue PiirtoAlueelle} lisättävä taso, joka sisältää väritettäviä
  * {@link Pikseli Pikseleitä}.
  */
-public class PiirtoTaso extends Pane implements Serializable {
-    /** TODO tarvitseeko näitä
+public class PiirtoTaso extends Pane {
+    /**
      * Piirtotason leveys kuvapisteissä.
      */
     private static double leveys;
@@ -48,14 +48,13 @@ public class PiirtoTaso extends Pane implements Serializable {
     /**
      * Tason näkyvyys asteikolla 0-100.
      */
-    private int nakyvyys = 100; // TODO tätä ei tarvita
+    private int nakyvyys = 100;
     /**
      * Onko taso piilotettu vai ei. {@link #nakyvyys nakyvyys} 100 ei tarkoita, että
      * <code>piilotettu</code> olisi tosi, eikä toisin päin.
      */
     private boolean piilotettu;
 
-    // TODO ehkä poistetaan tämä ja tähän liittyvät kentät täältä
     public static void setMitat(double leveys, double korkeus, int pikseleitaX, int pikseleitaY) {
         PiirtoTaso.leveys = leveys;
         PiirtoTaso.korkeus = korkeus;
@@ -97,8 +96,6 @@ public class PiirtoTaso extends Pane implements Serializable {
     public PiirtoTaso(Object[] o) {
         super();
 
-        System.out.println("Luodaan PiirtoTaso objektista"); // TEMP
-
         tasoNro++;
         nimi = (String) o[0];
 
@@ -122,6 +119,16 @@ public class PiirtoTaso extends Pane implements Serializable {
         PiirtoTaso.tasoNro = tasoNro;
     }
 
+    /**
+     * Palauttaa kaksiulotteisen taulukon piirtotason {@link Pikseli Pikseleistä}.
+     * <br>
+     * Taulukon ylempi (ulompi) taso on kuvaa sarakkeita ja alempi
+     * (sisempi) rivejä.
+     * <br>
+     * Esimerkiksi: <code>Pikseli[2][3]</code> = Pikseli sarakkeessa 2 ja rivissä 3
+     * (alkaen nollasta).
+     * @return Pikseli-olioiden taulukko
+     */
     public Pikseli[][] getPikselit() {
         return pikselit;
     }
@@ -172,6 +179,13 @@ public class PiirtoTaso extends Pane implements Serializable {
         };
     }
 
+    /**
+     * Asettaa sarakkeessa x ja rivillä y olevan pikselin värin ja näkyvyyden.
+     * @param x Pikselin sarake (x-koordinaatti)
+     * @param y Pikselin rivi (y-koordinaatti)
+     * @param vari Pikselin uusi väri
+     * @param nakyvyys Pikselin uusi näkyvyys
+     */
     public void setPikseli(int x, int y, Color vari, int nakyvyys) {
         pikselit[x][y].setPikseli(vari, nakyvyys);
     }
@@ -201,14 +215,20 @@ public class PiirtoTaso extends Pane implements Serializable {
      * @param nakyvyys PiirtoTason näkyvyys asteikolla 0-100.
      */
     public void setNakyvyys(int nakyvyys) {
-        this.nakyvyys = nakyvyys; // TODO pois
+        this.nakyvyys = nakyvyys;
         this.setOpacity(nakyvyys / 100d);
     }
 
+    /**
+     * @return Onko taso piilotettu vai ei
+     */
     public boolean getPiilotettu() {
         return piilotettu;
     }
 
+    /**
+     * @param piilotettu Onko taso piilotettu vai ei
+     */
     public void setPiilotettu(boolean piilotettu) {
         this.piilotettu = piilotettu;
         this.setVisible(!piilotettu);
@@ -254,7 +274,7 @@ public class PiirtoTaso extends Pane implements Serializable {
      * @return Nimi, näkyvyys, piilotettu, Pikselit
      */
     public Object[] tallennus() {
-        Object[][][] pikselitTallennus = new Object[pikseleitaX][pikseleitaY][2]; // TODO 2 voi muuttua
+        Object[][][] pikselitTallennus = new Object[pikseleitaX][pikseleitaY][2]; // Kovakoodattu palautettavien alkioiden määrä, voi muuttua :(
         for (int x = 0; x < pikseleitaX; x++) {
             for (int y = 0; y < pikseleitaY; y++) {
                 pikselitTallennus[x][y] = pikselit[x][y].tallennus();
