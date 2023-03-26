@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Ohjelman päävalikko.
+ */
 public class NayttoAlku extends Application implements Naytto {
     private int pikseleitaX = Main.pikseleitaX;
     private int pikseleitaY = Main.pikseleitaY;

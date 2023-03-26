@@ -30,6 +30,9 @@ import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 
+/**
+ * Ohjelman piirtonäkymä.
+ */
 public class NayttoPiirto extends Application implements Naytto {
     private int pikseleitaX = Main.pikseleitaX;
     private int pikseleitaY = Main.pikseleitaY;
