@@ -1,12 +1,12 @@
 # Asentaminen
 
-Ohjelma ladataan GitHubista, josta sen saa Code-näppäimen takaa joko ZIP-kansiona tai HTTPS-linkkinä.
+Ohjelma ladataan [GitHubista](https://github.com/Orofil/piirto-ohjelma), josta sen saa Code-näppäimen takaa joko ZIP-kansiona tai HTTPS-linkkinä.
 
-Ohjelmaa ei voi avata suoraan, sillä siitä ei ole tehty suoritettavaa pakkausta, vaan se täytyy suorittaa jossakin IDEssä. Ohjeet siihen löytyvät OHII-kurssin Moodlessa olevasta pdf-tiedostosta dioilta 35–39.
+Ohjelmaa ei voi avata suoraan, sillä siitä ei ole tehty suoritettavaa pakkausta, vaan se täytyy suorittaa jossakin IDEssä. Ohjeet siihen löytyvät OHII-kurssin Moodlessa olevasta [pdf-tiedostosta](https://elearn.uef.fi/mod/resource/view.php?id=196986&redirect=1) dioilta 35–39.
 
-Ohjelman suorittamiseen tarvitaan jokin JDK (minulla Amazon Corretto 17, Windows x64). Siihen tarvitaan myös JavaFX (minulla versio 20, Windows x86), jonka ainakin IntelliJ IDEA luultavasti lataa automaattisesti. Ohjelma käyttää myös JavaFX:n swing-kirjastoa, jota IntelliJ ei minulla ladannut automaattisesti, vaan minun piti siinä vaiheessa ladata koko JavaFX erikseen, josta sitten lisäsin projektin käyttämiin kirjastoihin javafx.swing.jar-tiedoston (IntelliJ IDEAlla File > Project Structure > Libraries > New Project Library > Java > javafx.swing.jar (pitäisi tulla luetteloon nimellä javafx.swing)).
+Ohjelman suorittamiseen tarvitaan jokin JDK (minulla [Amazon Corretto 17](https://docs.aws.amazon.com/corretto/latest/corretto-17-ug/downloads-list.html), Windows x64). Siihen tarvitaan myös [JavaFX](https://gluonhq.com/products/javafx/) (minulla versio 20, Windows x86), jonka ainakin IntelliJ IDEA luultavasti lataa automaattisesti. Ohjelma käyttää myös JavaFX:n swing-kirjastoa, jota IntelliJ ei minulla ladannut automaattisesti, vaan minun piti siinä vaiheessa ladata koko JavaFX erikseen, josta sitten lisäsin projektin käyttämiin kirjastoihin javafx.swing.jar-tiedoston (IntelliJ IDEAlla File > Project Structure > Libraries > New Project Library > Java > javafx.swing.jar (pitäisi tulla luetteloon nimellä javafx.swing)).
 
-Jos swing-kirjaston lisäys ei toimi, voi ohjelmaa käyttää ilman sitä muuttamalla seuraavat rivit kommenteiksi: TODO
+Jos swing-kirjaston lisäys ei toimi, voi ohjelmaa käyttää ilman sitä muuttamalla seuraavat rivit kommenteiksi:
 - src/main/java/com/example/piirto/NayttoPiirto.java
   - Rivi 5: import javafx.embed.swing.SwingFXUtils;
   - Rivi 643: ImageIO.write(SwingFXUtils.fromFXImage(...
