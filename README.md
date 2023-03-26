@@ -1,4 +1,4 @@
-# Asentaminen
+## Asentaminen
 
 Ohjelma ladataan [GitHubista](https://github.com/Orofil/piirto-ohjelma), josta sen saa Code-näppäimen takaa joko ZIP-kansiona tai HTTPS-linkkinä.
 
@@ -15,7 +15,7 @@ Jos swing-kirjaston lisäys ei toimi, voi ohjelmaa käyttää ilman sitä muutta
 Tällöin ainoa ominaisuus, joka ei toimi, on png-tiedostoksi tallentaminen.
 Ohjelma suoritetaan ajamalla tiedoston src/main/java/com/example/piirto/Main.java metodi main().
 
-# Käyttö
+## Käyttö
 
 Ohjelma käynnistyy kuvan 1 näkymään, jossa käyttäjä voi syöttää luotavalle piirtopohjalle leveyden ja korkeuden ja painaa sitten suurta plusnappia (+) luodakseen uuden kuvan. Tällöin aukeaa näkymä 2, jossa käyttäjä voi värittää ruudullista piirtoaluetta oletuksena mustaksi painamalla hiiren vasenta näppäintä pohjassa. Painamalla hiiren oikeaa näppäintä, väritystä voi poistaa.
 
